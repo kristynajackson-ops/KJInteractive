@@ -141,7 +141,7 @@ export default function Home() {
                 src="/iso-1.png" 
                 alt="Kristyn Jackson" 
                 width={600} height={600}
-                className={`max-w-none w-[120%] h-auto object-contain -ml-[10vw] md:-ml-[15vw] lg:-ml-[18vw] cursor-pointer${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
+                className={`max-w-none w-[120%] h-auto object-contain -ml-[10vw] md:-ml-[15vw] lg:-ml-[18vw] cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
                 style={{
                   transition: 'transform 0.3s ease',
                   transform: `scale(${scale}) translateX(${hovered ? '10px' : '0px'})`
@@ -307,6 +307,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 
 
