@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -89,7 +89,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="bg-white text-blue-900 pt-16">
         <div className="relative h-[30rem] sm:h-[36rem] bg-white">
-          <img src="/kj-banner.jpg" alt="Kristyn Jackson banner" className="absolute inset-0 h-full w-full object-cover object-top" />
+          <img src="/kj-banner-2.jpg" alt="Kristyn Jackson banner" className="absolute inset-0 h-full w-full object-cover object-top" />
           <div className="absolute inset-0 bg-black/30" aria-hidden="true"></div>
           <div className="relative h-full">
             <div className="max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
