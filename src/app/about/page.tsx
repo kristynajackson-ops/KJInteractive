@@ -64,7 +64,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
           <div ref={imageRef} className={`flex md:justify-start justify-center mt-20 ${imageVisible ? 'banner-animate' : 'opacity-0'}`}>
             <img 
-              src="/kj-about.jpg"
+              src="/kj-about-2.jpg"
               alt="Kristyn Jackson"
               width={256} height={256}
               className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover shadow-xl scale-150"
