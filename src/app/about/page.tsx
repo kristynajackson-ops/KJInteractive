@@ -67,7 +67,7 @@ export default function AboutPage() {
               src="/kj-about-3.jpg"
               alt="Kristyn Jackson"
               width={256} height={256}
-              className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover shadow-xl scale-150"
+              className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover shadow-xl scale-[1.75]"
               style={{ objectPosition: 'center 75%' }}
             />
           </div>
