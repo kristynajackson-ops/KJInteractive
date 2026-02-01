@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -102,6 +102,9 @@ export default function Home() {
                   </a>
                   <a href="#ideas" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105">
                     Ideas
+                  </a>
+                <a href="/ideas/strategy-interactive" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105 bg-gradient-to-r from-[#1db6ac] to-[#3dd1c7]">
+                    Try the Strategy Interactive tool
                   </a>
                 </div>
               </div>
