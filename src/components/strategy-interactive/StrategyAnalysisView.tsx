@@ -775,12 +775,35 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     setDragStart({ x: e.clientX, y: e.clientY, boxX, boxY });
   }, []);
 
+  // Touch handlers for mobile drag
+  const handleTouchStart = useCallback((e: React.TouchEvent, id: string, boxX: number, boxY: number) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.contentEditable === 'true' || target.closest('input') || target.closest('[contenteditable="true"]')) {
+      return;
+    }
+    const rect = target.closest('.drag-handle');
+    if (!rect) return;
+    const touch = e.touches[0];
+    setDraggedId(id);
+    setDragStart({ x: touch.clientX, y: touch.clientY, boxX, boxY });
+  }, []);
+
   const handleResizeStart = useCallback((e: React.MouseEvent, id: string, width: number, height: number, boxX: number, boxY: number, corner: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l') => {
     e.preventDefault();
     e.stopPropagation();
     setResizingId(id);
     setResizeCorner(corner);
     setResizeStart({ x: e.clientX, y: e.clientY, width, height, boxX, boxY });
+  }, []);
+
+  // Touch handler for mobile resize
+  const handleResizeTouchStart = useCallback((e: React.TouchEvent, id: string, width: number, height: number, boxX: number, boxY: number, corner: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l') => {
+    e.preventDefault();
+    e.stopPropagation();
+    const touch = e.touches[0];
+    setResizingId(id);
+    setResizeCorner(corner);
+    setResizeStart({ x: touch.clientX, y: touch.clientY, width, height, boxX, boxY });
   }, []);
 
   // Use document-level events for smoother dragging (prevents glitches when mouse moves fast)
@@ -878,9 +901,110 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     document.addEventListener('mousemove', handleDocumentMouseMove);
     document.addEventListener('mouseup', handleDocumentMouseUp);
     
+    // Touch event handlers for mobile
+    const handleDocumentTouchMove = (e: TouchEvent) => {
+      if (!draggedId && !resizingId) return;
+      if (!containerRef) return;
+      
+      const touch = e.touches[0];
+      const containerRect = containerRef.getBoundingClientRect();
+      const SNAP_THRESHOLD = 0.5;
+
+      if (draggedId && dragStart) {
+        e.preventDefault(); // Prevent scrolling while dragging
+        const deltaX = ((touch.clientX - dragStart.x) / containerRect.width) * 100;
+        const deltaY = ((touch.clientY - dragStart.y) / containerRect.height) * 100;
+        const currentBox = boxes.find(b => b.id === draggedId);
+        const boxWidth = currentBox?.width || 30;
+        const boxHeight = currentBox?.height || 20;
+        let newX = Math.max(0, Math.min(100 - boxWidth, dragStart.boxX + deltaX));
+        let newY = Math.max(0, Math.min(100 - boxHeight, dragStart.boxY + deltaY));
+        
+        const otherBoxes = boxes.filter(b => b.id !== draggedId && b.visible);
+        for (const other of otherBoxes) {
+          if (Math.abs(newX - other.x) < SNAP_THRESHOLD) newX = other.x;
+          if (Math.abs((newX + boxWidth) - (other.x + other.width)) < SNAP_THRESHOLD) newX = other.x + other.width - boxWidth;
+          if (Math.abs(newX - (other.x + other.width)) < SNAP_THRESHOLD) newX = other.x + other.width;
+          if (Math.abs((newX + boxWidth) - other.x) < SNAP_THRESHOLD) newX = other.x - boxWidth;
+          if (Math.abs(newY - other.y) < SNAP_THRESHOLD) newY = other.y;
+          if (Math.abs((newY + boxHeight) - (other.y + other.height)) < SNAP_THRESHOLD) newY = other.y + other.height - boxHeight;
+          if (Math.abs(newY - (other.y + other.height)) < SNAP_THRESHOLD) newY = other.y + other.height;
+          if (Math.abs((newY + boxHeight) - other.y) < SNAP_THRESHOLD) newY = other.y - boxHeight;
+        }
+        
+        setBoxes(prev => prev.map(box => 
+          box.id === draggedId ? { ...box, x: newX, y: newY } : box
+        ));
+      }
+
+      if (resizingId && resizeStart && resizeCorner) {
+        e.preventDefault(); // Prevent scrolling while resizing
+        const deltaX = ((touch.clientX - resizeStart.x) / containerRect.width) * 100;
+        const deltaY = ((touch.clientY - resizeStart.y) / containerRect.height) * 100;
+        
+        let newWidth = resizeStart.width;
+        let newHeight = resizeStart.height;
+        let newX = resizeStart.boxX;
+        let newY = resizeStart.boxY;
+        
+        if (resizeCorner === 'br') {
+          newWidth = Math.max(15, Math.min(100 - newX, resizeStart.width + deltaX));
+          newHeight = Math.max(10, Math.min(100 - newY, resizeStart.height + deltaY));
+        } else if (resizeCorner === 'bl') {
+          const widthDelta = -deltaX;
+          newWidth = Math.max(15, resizeStart.width + widthDelta);
+          newX = Math.max(0, Math.min(resizeStart.boxX + resizeStart.width - 15, resizeStart.boxX + deltaX));
+          newHeight = Math.max(10, Math.min(100 - newY, resizeStart.height + deltaY));
+        } else if (resizeCorner === 'tr') {
+          newWidth = Math.max(15, Math.min(100 - newX, resizeStart.width + deltaX));
+          const heightDelta = -deltaY;
+          newHeight = Math.max(10, resizeStart.height + heightDelta);
+          newY = Math.max(0, Math.min(resizeStart.boxY + resizeStart.height - 10, resizeStart.boxY + deltaY));
+        } else if (resizeCorner === 'tl') {
+          const widthDelta = -deltaX;
+          const heightDelta = -deltaY;
+          newWidth = Math.max(15, resizeStart.width + widthDelta);
+          newHeight = Math.max(10, resizeStart.height + heightDelta);
+          newX = Math.max(0, Math.min(resizeStart.boxX + resizeStart.width - 15, resizeStart.boxX + deltaX));
+          newY = Math.max(0, Math.min(resizeStart.boxY + resizeStart.height - 10, resizeStart.boxY + deltaY));
+        } else if (resizeCorner === 't') {
+          const heightDelta = -deltaY;
+          newHeight = Math.max(10, resizeStart.height + heightDelta);
+          newY = Math.max(0, Math.min(resizeStart.boxY + resizeStart.height - 10, resizeStart.boxY + deltaY));
+        } else if (resizeCorner === 'r') {
+          newWidth = Math.max(15, Math.min(100 - newX, resizeStart.width + deltaX));
+        } else if (resizeCorner === 'b') {
+          newHeight = Math.max(10, Math.min(100 - newY, resizeStart.height + deltaY));
+        } else if (resizeCorner === 'l') {
+          const widthDelta = -deltaX;
+          newWidth = Math.max(15, resizeStart.width + widthDelta);
+          newX = Math.max(0, Math.min(resizeStart.boxX + resizeStart.width - 15, resizeStart.boxX + deltaX));
+        }
+        
+        setBoxes(prev => prev.map(box => 
+          box.id === resizingId ? { ...box, x: newX, y: newY, width: newWidth, height: newHeight } : box
+        ));
+      }
+    };
+
+    const handleDocumentTouchEnd = () => {
+      setDraggedId(null);
+      setDragStart(null);
+      setResizingId(null);
+      setResizeCorner(null);
+      setResizeStart(null);
+    };
+
+    document.addEventListener('touchmove', handleDocumentTouchMove, { passive: false });
+    document.addEventListener('touchend', handleDocumentTouchEnd);
+    document.addEventListener('touchcancel', handleDocumentTouchEnd);
+    
     return () => {
       document.removeEventListener('mousemove', handleDocumentMouseMove);
       document.removeEventListener('mouseup', handleDocumentMouseUp);
+      document.removeEventListener('touchmove', handleDocumentTouchMove);
+      document.removeEventListener('touchend', handleDocumentTouchEnd);
+      document.removeEventListener('touchcancel', handleDocumentTouchEnd);
     };
   }, [draggedId, dragStart, resizingId, resizeStart, resizeCorner, containerRef, boxes]);
 
@@ -890,124 +1014,249 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   return (
     <div className="strategy-canvas w-full">
       {/* Print Controls */}
-      <div className="print:hidden mb-4 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eff0f0] text-[#1db6ac] text-sm font-medium">
-            {analysis.analysis_method === "llm" ? "AI-Powered Analysis" : "Pattern-Based Analysis"}
+      <div className="print:hidden mb-4">
+        {/* Mobile: Analysis info on top */}
+        <div className="flex items-center gap-3 mb-3 md:mb-0 md:hidden">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#eff0f0] text-[#1db6ac] text-xs font-medium">
+            {analysis.analysis_method === "llm" ? "AI Analysis" : "Pattern Analysis"}
           </span>
-          <span className="text-sm text-gray-500">
-            {(analysis.raw_text_length / 1000).toFixed(1)}k characters analysed
+          <span className="text-xs text-gray-500">
+            {(analysis.raw_text_length / 1000).toFixed(1)}k chars
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {hiddenBoxes.length > 0 && (
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  restoreBox(e.target.value);
-                }
-                e.target.value = "";
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-              defaultValue=""
-            >
-              <option value="" disabled>Restore removed box...</option>
-              {hiddenBoxes.map(item => (
-                <option key={item.id} value={item.id}>{item.title}</option>
-              ))}
-            </select>
-          )}
-          <button
-            onClick={resetToDefault}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
-            title="Reset to default"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Reset
-          </button>
-          <button
-            onClick={undo}
-            disabled={historyIndex <= 0}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Undo"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-            </svg>
-            Undo
-          </button>
-          <button
-            onClick={redo}
-            disabled={historyIndex >= history.length - 1}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Redo"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-            </svg>
-            Redo
-          </button>
-          <button
-            onClick={addBox}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] transition-colors font-medium"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add box
-          </button>
-          <button
-            onClick={handleExportPdf}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1db6ac] text-white rounded-lg hover:bg-[#19a89f] transition-colors font-medium"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export to PDF
-          </button>
-          {/* Font size controls */}
-          <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
-            <button
-              onClick={decreaseFontSize}
-              disabled={fontSizeIndex === 0}
-              className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-gray-300"
-              title="Decrease font size"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-              </svg>
-            </button>
-            <span className="px-3 py-2 bg-white text-gray-700 text-sm font-medium min-w-[60px] text-center">
-              {FONT_SIZES[fontSizeIndex]}px
+        
+        {/* Desktop layout */}
+        <div className="hidden md:flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eff0f0] text-[#1db6ac] text-sm font-medium">
+              {analysis.analysis_method === "llm" ? "AI-Powered Analysis" : "Pattern-Based Analysis"}
             </span>
+            <span className="text-sm text-gray-500">
+              {(analysis.raw_text_length / 1000).toFixed(1)}k characters analysed
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {hiddenBoxes.length > 0 && (
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    restoreBox(e.target.value);
+                  }
+                  e.target.value = "";
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                defaultValue=""
+              >
+                <option value="" disabled>Restore removed box...</option>
+                {hiddenBoxes.map(item => (
+                  <option key={item.id} value={item.id}>{item.title}</option>
+                ))}
+              </select>
+            )}
             <button
-              onClick={increaseFontSize}
-              disabled={fontSizeIndex === 5}
-              className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-l border-gray-300"
-              title="Increase font size"
+              onClick={resetToDefault}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+              title="Reset to default"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset
+            </button>
+            <button
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Undo"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              Undo
+            </button>
+            <button
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Redo"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+              </svg>
+              Redo
+            </button>
+            <button
+              onClick={addBox}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] transition-colors font-medium"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
+              Add box
+            </button>
+            <button
+              onClick={handleExportPdf}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#1db6ac] text-white rounded-lg hover:bg-[#19a89f] transition-colors font-medium"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export to PDF
+            </button>
+            {/* Font size controls */}
+            <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={decreaseFontSize}
+                disabled={fontSizeIndex === 0}
+                className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-gray-300"
+                title="Decrease font size"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+              <span className="px-3 py-2 bg-white text-gray-700 text-sm font-medium min-w-[60px] text-center">
+                {FONT_SIZES[fontSizeIndex]}px
+              </span>
+              <button
+                onClick={increaseFontSize}
+                disabled={fontSizeIndex === 5}
+                className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-l border-gray-300"
+                title="Increase font size"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+            <button
+              onClick={handleDarkModeToggle}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${isDarkMode ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+            >
+              {isDarkMode ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+              {isDarkMode ? 'Light' : 'Dark'}
             </button>
           </div>
-          <button
-            onClick={handleDarkModeToggle}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${isDarkMode ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
-          >
-            {isDarkMode ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
+        </div>
+
+        {/* Mobile toolbar - horizontally scrollable */}
+        <div className="md:hidden overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="flex items-center gap-2 min-w-max">
+            {hiddenBoxes.length > 0 && (
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    restoreBox(e.target.value);
+                  }
+                  e.target.value = "";
+                }}
+                className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white flex-shrink-0"
+                defaultValue=""
+              >
+                <option value="" disabled>Restore...</option>
+                {hiddenBoxes.map(item => (
+                  <option key={item.id} value={item.id}>{item.title}</option>
+                ))}
+              </select>
             )}
-            {isDarkMode ? 'Light' : 'Dark'}
-          </button>
+            <button
+              onClick={resetToDefault}
+              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 transition-colors font-medium text-xs flex-shrink-0"
+              title="Reset"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset
+            </button>
+            <button
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 transition-colors font-medium text-xs disabled:opacity-50 flex-shrink-0"
+              title="Undo"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 transition-colors font-medium text-xs disabled:opacity-50 flex-shrink-0"
+              title="Redo"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={addBox}
+              className="inline-flex items-center gap-1 px-2 py-1.5 bg-[#1e3a5f] text-white rounded-lg active:bg-[#162d4a] transition-colors font-medium text-xs flex-shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add
+            </button>
+            <button
+              onClick={handleExportPdf}
+              className="inline-flex items-center gap-1 px-2 py-1.5 bg-[#1db6ac] text-white rounded-lg active:bg-[#19a89f] transition-colors font-medium text-xs flex-shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              PDF
+            </button>
+            {/* Font size controls - compact */}
+            <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden flex-shrink-0">
+              <button
+                onClick={decreaseFontSize}
+                disabled={fontSizeIndex === 0}
+                className="px-2 py-1.5 bg-white text-gray-700 active:bg-gray-100 transition-colors disabled:opacity-50 border-r border-gray-300"
+                title="Decrease"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+              <span className="px-2 py-1.5 bg-white text-gray-700 text-xs font-medium">
+                {FONT_SIZES[fontSizeIndex]}
+              </span>
+              <button
+                onClick={increaseFontSize}
+                disabled={fontSizeIndex === 5}
+                className="px-2 py-1.5 bg-white text-gray-700 active:bg-gray-100 transition-colors disabled:opacity-50 border-l border-gray-300"
+                title="Increase"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+            <button
+              onClick={handleDarkModeToggle}
+              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors font-medium text-xs flex-shrink-0 ${isDarkMode ? 'bg-gray-200 text-gray-800 active:bg-gray-300' : 'bg-gray-800 text-white active:bg-gray-700'}`}
+            >
+              {isDarkMode ? (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+              {isDarkMode ? 'Light' : 'Dark'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1070,8 +1319,9 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                 }}
               >
                 <div
-                  className="drag-handle cursor-grab active:cursor-grabbing flex-1 flex flex-col"
+                  className="drag-handle cursor-grab active:cursor-grabbing flex-1 flex flex-col touch-none"
                   onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
+                  onTouchStart={(e) => handleTouchStart(e, box.id, box.x, box.y)}
                 >
                   {box.type === "text" ? (
                     <EditableBox
@@ -1101,37 +1351,45 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                 </div>
                 {/* Resize handles - all corners */}
                 <div
-                  className={`absolute top-0 left-0 w-3 h-3 cursor-nw-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute top-0 left-0 w-5 h-5 md:w-3 md:h-3 cursor-nw-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
                 />
                 <div
-                  className={`absolute top-0 right-0 w-3 h-3 cursor-ne-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute top-0 right-0 w-5 h-5 md:w-3 md:h-3 cursor-ne-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
                 />
                 <div
-                  className={`absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute bottom-0 left-0 w-5 h-5 md:w-3 md:h-3 cursor-sw-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
                 />
                 <div
-                  className={`absolute bottom-0 right-0 w-3 h-3 cursor-se-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute bottom-0 right-0 w-5 h-5 md:w-3 md:h-3 cursor-se-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
                 />
                 {/* Resize handles - all edges */}
                 <div
-                  className={`absolute top-0 left-3 right-3 h-1 cursor-n-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute top-0 left-5 right-5 md:left-3 md:right-3 h-2 md:h-1 cursor-n-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
                 />
                 <div
-                  className={`absolute right-0 top-3 bottom-3 w-1 cursor-e-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute right-0 top-5 bottom-5 md:top-3 md:bottom-3 w-2 md:w-1 cursor-e-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
                 />
                 <div
-                  className={`absolute bottom-0 left-3 right-3 h-1 cursor-s-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute bottom-0 left-5 right-5 md:left-3 md:right-3 h-2 md:h-1 cursor-s-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
                 />
                 <div
-                  className={`absolute left-0 top-3 bottom-3 w-1 cursor-w-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
+                  className={`absolute left-0 top-5 bottom-5 md:top-3 md:bottom-3 w-2 md:w-1 cursor-w-resize opacity-100 md:opacity-0 md:group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} touch-none`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
+                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
                 />
               </div>
             ))}
