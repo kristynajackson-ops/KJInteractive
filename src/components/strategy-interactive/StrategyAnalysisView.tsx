@@ -761,6 +761,24 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   const [resizeCorner, setResizeCorner] = useState<'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l' | null>(null);
   const [resizeStart, setResizeStart] = useState<{ x: number; y: number; width: number; height: number; boxX: number; boxY: number } | null>(null);
 
+  // Refs to track current state for touch/mouse handlers (avoids stale closure issues)
+  const draggedIdRef = useRef<string | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number; boxX: number; boxY: number } | null>(null);
+  const resizingIdRef = useRef<string | null>(null);
+  const resizeCornerRef = useRef<'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l' | null>(null);
+  const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number; boxX: number; boxY: number } | null>(null);
+  const containerRefRef = useRef<HTMLDivElement | null>(null);
+  const boxesRef = useRef(boxes);
+
+  // Keep refs in sync with state
+  useEffect(() => { draggedIdRef.current = draggedId; }, [draggedId]);
+  useEffect(() => { dragStartRef.current = dragStart; }, [dragStart]);
+  useEffect(() => { resizingIdRef.current = resizingId; }, [resizingId]);
+  useEffect(() => { resizeCornerRef.current = resizeCorner; }, [resizeCorner]);
+  useEffect(() => { resizeStartRef.current = resizeStart; }, [resizeStart]);
+  useEffect(() => { containerRefRef.current = containerRef; }, [containerRef]);
+  useEffect(() => { boxesRef.current = boxes; }, [boxes]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent, id: string, boxX: number, boxY: number) => {
     // Don't start drag if clicking on editable elements
     const target = e.target as HTMLElement;
@@ -806,121 +824,31 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     setResizeStart({ x: touch.clientX, y: touch.clientY, width, height, boxX, boxY });
   }, []);
 
-  // Use document-level events for smoother dragging (prevents glitches when mouse moves fast)
+  // Use document-level events for smoother dragging (prevents glitches when mouse/touch moves fast)
+  // This effect runs once and uses refs to access current state values
   useEffect(() => {
-    if (!draggedId && !resizingId) return;
-    
-    const handleDocumentMouseMove = (e: MouseEvent) => {
-      if (!containerRef) return;
-      const containerRect = containerRef.getBoundingClientRect();
-      const SNAP_THRESHOLD = 0.5;
-
-      if (draggedId && dragStart) {
-        const deltaX = ((e.clientX - dragStart.x) / containerRect.width) * 100;
-        const deltaY = ((e.clientY - dragStart.y) / containerRect.height) * 100;
-        const currentBox = boxes.find(b => b.id === draggedId);
-        const boxWidth = currentBox?.width || 30;
-        const boxHeight = currentBox?.height || 20;
-        let newX = Math.max(0, Math.min(100 - boxWidth, dragStart.boxX + deltaX));
-        let newY = Math.max(0, Math.min(100 - boxHeight, dragStart.boxY + deltaY));
-        
-        const otherBoxes = boxes.filter(b => b.id !== draggedId && b.visible);
-        for (const other of otherBoxes) {
-          if (Math.abs(newX - other.x) < SNAP_THRESHOLD) newX = other.x;
-          if (Math.abs((newX + boxWidth) - (other.x + other.width)) < SNAP_THRESHOLD) newX = other.x + other.width - boxWidth;
-          if (Math.abs(newX - (other.x + other.width)) < SNAP_THRESHOLD) newX = other.x + other.width;
-          if (Math.abs((newX + boxWidth) - other.x) < SNAP_THRESHOLD) newX = other.x - boxWidth;
-          if (Math.abs(newY - other.y) < SNAP_THRESHOLD) newY = other.y;
-          if (Math.abs((newY + boxHeight) - (other.y + other.height)) < SNAP_THRESHOLD) newY = other.y + other.height - boxHeight;
-          if (Math.abs(newY - (other.y + other.height)) < SNAP_THRESHOLD) newY = other.y + other.height;
-          if (Math.abs((newY + boxHeight) - other.y) < SNAP_THRESHOLD) newY = other.y - boxHeight;
-        }
-        
-        setBoxes(prev => prev.map(box => 
-          box.id === draggedId ? { ...box, x: newX, y: newY } : box
-        ));
-      }
-
-      if (resizingId && resizeStart && resizeCorner) {
-        const deltaX = ((e.clientX - resizeStart.x) / containerRect.width) * 100;
-        const deltaY = ((e.clientY - resizeStart.y) / containerRect.height) * 100;
-        
-        let newWidth = resizeStart.width;
-        let newHeight = resizeStart.height;
-        let newX = resizeStart.boxX;
-        let newY = resizeStart.boxY;
-        
-        if (resizeCorner === 'br') {
-          newWidth = Math.max(15, Math.min(100 - newX, resizeStart.width + deltaX));
-          newHeight = Math.max(10, Math.min(100 - newY, resizeStart.height + deltaY));
-        } else if (resizeCorner === 'bl') {
-          const widthDelta = -deltaX;
-          newWidth = Math.max(15, resizeStart.width + widthDelta);
-          newX = Math.max(0, Math.min(resizeStart.boxX + resizeStart.width - 15, resizeStart.boxX + deltaX));
-          newHeight = Math.max(10, Math.min(100 - newY, resizeStart.height + deltaY));
-        } else if (resizeCorner === 'tr') {
-          newWidth = Math.max(15, Math.min(100 - newX, resizeStart.width + deltaX));
-          const heightDelta = -deltaY;
-          newHeight = Math.max(10, resizeStart.height + heightDelta);
-          newY = Math.max(0, Math.min(resizeStart.boxY + resizeStart.height - 10, resizeStart.boxY + deltaY));
-        } else if (resizeCorner === 'tl') {
-          const widthDelta = -deltaX;
-          const heightDelta = -deltaY;
-          newWidth = Math.max(15, resizeStart.width + widthDelta);
-          newHeight = Math.max(10, resizeStart.height + heightDelta);
-          newX = Math.max(0, Math.min(resizeStart.boxX + resizeStart.width - 15, resizeStart.boxX + deltaX));
-          newY = Math.max(0, Math.min(resizeStart.boxY + resizeStart.height - 10, resizeStart.boxY + deltaY));
-        } else if (resizeCorner === 't') {
-          const heightDelta = -deltaY;
-          newHeight = Math.max(10, resizeStart.height + heightDelta);
-          newY = Math.max(0, Math.min(resizeStart.boxY + resizeStart.height - 10, resizeStart.boxY + deltaY));
-        } else if (resizeCorner === 'r') {
-          newWidth = Math.max(15, Math.min(100 - newX, resizeStart.width + deltaX));
-        } else if (resizeCorner === 'b') {
-          newHeight = Math.max(10, Math.min(100 - newY, resizeStart.height + deltaY));
-        } else if (resizeCorner === 'l') {
-          const widthDelta = -deltaX;
-          newWidth = Math.max(15, resizeStart.width + widthDelta);
-          newX = Math.max(0, Math.min(resizeStart.boxX + resizeStart.width - 15, resizeStart.boxX + deltaX));
-        }
-        
-        setBoxes(prev => prev.map(box => 
-          box.id === resizingId ? { ...box, x: newX, y: newY, width: newWidth, height: newHeight } : box
-        ));
-      }
-    };
-
-    const handleDocumentMouseUp = () => {
-      setDraggedId(null);
-      setDragStart(null);
-      setResizingId(null);
-      setResizeCorner(null);
-      setResizeStart(null);
-    };
-
-    document.addEventListener('mousemove', handleDocumentMouseMove);
-    document.addEventListener('mouseup', handleDocumentMouseUp);
-    
-    // Touch event handlers for mobile
-    const handleDocumentTouchMove = (e: TouchEvent) => {
-      if (!draggedId && !resizingId) return;
-      if (!containerRef) return;
+    const handleMove = (clientX: number, clientY: number) => {
+      const container = containerRefRef.current;
+      if (!container) return;
       
-      const touch = e.touches[0];
-      const containerRect = containerRef.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
       const SNAP_THRESHOLD = 0.5;
+      const currentBoxes = boxesRef.current;
 
-      if (draggedId && dragStart) {
-        e.preventDefault(); // Prevent scrolling while dragging
-        const deltaX = ((touch.clientX - dragStart.x) / containerRect.width) * 100;
-        const deltaY = ((touch.clientY - dragStart.y) / containerRect.height) * 100;
-        const currentBox = boxes.find(b => b.id === draggedId);
+      // Handle drag
+      if (draggedIdRef.current && dragStartRef.current) {
+        const dragStart = dragStartRef.current;
+        const draggedId = draggedIdRef.current;
+        
+        const deltaX = ((clientX - dragStart.x) / containerRect.width) * 100;
+        const deltaY = ((clientY - dragStart.y) / containerRect.height) * 100;
+        const currentBox = currentBoxes.find(b => b.id === draggedId);
         const boxWidth = currentBox?.width || 30;
         const boxHeight = currentBox?.height || 20;
         let newX = Math.max(0, Math.min(100 - boxWidth, dragStart.boxX + deltaX));
         let newY = Math.max(0, Math.min(100 - boxHeight, dragStart.boxY + deltaY));
         
-        const otherBoxes = boxes.filter(b => b.id !== draggedId && b.visible);
+        const otherBoxes = currentBoxes.filter(b => b.id !== draggedId && b.visible);
         for (const other of otherBoxes) {
           if (Math.abs(newX - other.x) < SNAP_THRESHOLD) newX = other.x;
           if (Math.abs((newX + boxWidth) - (other.x + other.width)) < SNAP_THRESHOLD) newX = other.x + other.width - boxWidth;
@@ -935,12 +863,17 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
         setBoxes(prev => prev.map(box => 
           box.id === draggedId ? { ...box, x: newX, y: newY } : box
         ));
+        return true; // Indicate we handled a drag
       }
 
-      if (resizingId && resizeStart && resizeCorner) {
-        e.preventDefault(); // Prevent scrolling while resizing
-        const deltaX = ((touch.clientX - resizeStart.x) / containerRect.width) * 100;
-        const deltaY = ((touch.clientY - resizeStart.y) / containerRect.height) * 100;
+      // Handle resize
+      if (resizingIdRef.current && resizeStartRef.current && resizeCornerRef.current) {
+        const resizeStart = resizeStartRef.current;
+        const resizingId = resizingIdRef.current;
+        const resizeCorner = resizeCornerRef.current;
+        
+        const deltaX = ((clientX - resizeStart.x) / containerRect.width) * 100;
+        const deltaY = ((clientY - resizeStart.y) / containerRect.height) * 100;
         
         let newWidth = resizeStart.width;
         let newHeight = resizeStart.height;
@@ -984,10 +917,13 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
         setBoxes(prev => prev.map(box => 
           box.id === resizingId ? { ...box, x: newX, y: newY, width: newWidth, height: newHeight } : box
         ));
+        return true; // Indicate we handled a resize
       }
+      
+      return false;
     };
 
-    const handleDocumentTouchEnd = () => {
+    const handleEnd = () => {
       setDraggedId(null);
       setDragStart(null);
       setResizingId(null);
@@ -995,18 +931,49 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       setResizeStart(null);
     };
 
-    document.addEventListener('touchmove', handleDocumentTouchMove, { passive: false });
-    document.addEventListener('touchend', handleDocumentTouchEnd);
-    document.addEventListener('touchcancel', handleDocumentTouchEnd);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (draggedIdRef.current || resizingIdRef.current) {
+        handleMove(e.clientX, e.clientY);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (draggedIdRef.current || resizingIdRef.current) {
+        const touch = e.touches[0];
+        if (touch) {
+          e.preventDefault(); // Prevent scrolling while dragging/resizing
+          handleMove(touch.clientX, touch.clientY);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (draggedIdRef.current || resizingIdRef.current) {
+        handleEnd();
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (draggedIdRef.current || resizingIdRef.current) {
+        handleEnd();
+      }
+    };
+
+    // Always attach listeners
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd);
     
     return () => {
-      document.removeEventListener('mousemove', handleDocumentMouseMove);
-      document.removeEventListener('mouseup', handleDocumentMouseUp);
-      document.removeEventListener('touchmove', handleDocumentTouchMove);
-      document.removeEventListener('touchend', handleDocumentTouchEnd);
-      document.removeEventListener('touchcancel', handleDocumentTouchEnd);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [draggedId, dragStart, resizingId, resizeStart, resizeCorner, containerRef, boxes]);
+  }, []); // Empty dependency array - runs once, uses refs for current values
 
   const visibleBoxes = boxes.filter(box => box.visible);
   const hiddenBoxes = boxes.filter(box => !box.visible);

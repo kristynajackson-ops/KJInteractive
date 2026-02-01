@@ -75,7 +75,7 @@ export default function StrategyInteractivePage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white overflow-x-hidden">
       {/* Hero Banner */}
       <section className="bg-white text-blue-900 pt-16">
         <div className="relative h-[18rem] sm:h-[20rem] bg-white">
@@ -84,10 +84,10 @@ export default function StrategyInteractivePage() {
           <div className="relative h-full">
             <div className="max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
               <div className="text-left text-white">
-                <h1 className={`text-4xl md:text-5xl font-black text-white mb-6 drop-shadow-lg ${montserrat.className}`}>
+                <h1 className={`text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-6 drop-shadow-lg ${montserrat.className}`}>
                   Strategy: interactive
                 </h1>
-                <p className={`text-xl md:text-2xl text-white/90 drop-shadow-md max-w-2xl ${montserrat.className}`}>
+                <p className={`text-lg sm:text-xl md:text-2xl text-white/90 drop-shadow-md max-w-2xl ${montserrat.className}`}>
                   Strategy document too long, too fluffy?<br />I'll break it down to what matters most.
                 </p>
               </div>
@@ -97,27 +97,27 @@ export default function StrategyInteractivePage() {
       </section>
 
       {/* Content Section */}
-      <section className="relative py-10 px-6 bg-white">
+      <section className="relative py-8 sm:py-10 px-4 sm:px-6 bg-white">
         <div className="max-w-4xl mx-auto text-left">
           {/* Feature badges */}
-          <div className="flex flex-wrap justify-start gap-3 mb-12">
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-teal-50 text-teal-700 text-sm font-medium border border-teal-100">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-wrap justify-start gap-2 sm:gap-3 mb-8 sm:mb-12">
+            <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-blue-50 to-teal-50 text-teal-700 text-xs sm:text-sm font-medium border border-teal-100">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              PDF & Word Support
+              PDF & Word
             </span>
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 text-sm font-medium border border-purple-100">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 text-xs sm:text-sm font-medium border border-purple-100">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              AI-Powered Analysis
+              AI-Powered
             </span>
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-green-50 to-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-100">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-green-50 to-emerald-50 text-emerald-700 text-xs sm:text-sm font-medium border border-emerald-100">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Secure & Private
+              Secure
             </span>
           </div>
 
@@ -130,35 +130,35 @@ export default function StrategyInteractivePage() {
 
           {/* How does it work section */}
           <div className="mb-12 text-center">
-            <h2 className={`text-2xl md:text-3xl font-bold text-gray-900 mb-8 ${montserrat.className}`}>
+            <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 ${montserrat.className}`}>
               How does it work?
             </h2>
-            <img src="/from-to.png" alt="How the strategy analysis works" className="mx-auto max-w-md" />
+            <img src="/from-to.png" alt="How the strategy analysis works" className="mx-auto w-full max-w-xs sm:max-w-sm md:max-w-md" />
             
             {/* Three explanation boxes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-10">
               <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-[#1db6ac] flex items-center justify-center mb-4">
-                  <span className="text-white font-bold">1</span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#1db6ac] flex items-center justify-center mb-3 sm:mb-4">
+                  <span className="text-white font-bold text-sm sm:text-base">1</span>
                 </div>
-                <div className="bg-[#eff0f0] rounded-lg p-6 flex-1 w-full">
-                  <p className="text-gray-700">You have a great strategy that no one really reads because <span className="font-semibold">it's too long</span>.</p>
+                <div className="bg-[#eff0f0] rounded-lg p-4 sm:p-6 flex-1 w-full">
+                  <p className="text-gray-700 text-sm sm:text-base">You have a great strategy that no one really reads because <span className="font-semibold">it's too long</span>.</p>
                 </div>
               </div>
               <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-[#1db6ac] flex items-center justify-center mb-4">
-                  <span className="text-white font-bold">2</span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#1db6ac] flex items-center justify-center mb-3 sm:mb-4">
+                  <span className="text-white font-bold text-sm sm:text-base">2</span>
                 </div>
-                <div className="bg-[#eff0f0] rounded-lg p-6 flex-1 w-full">
-                  <p className="text-gray-700">I use my experience to identify <span className="font-semibold">what's truly essential</span> in a strategy to realise outcomes.</p>
+                <div className="bg-[#eff0f0] rounded-lg p-4 sm:p-6 flex-1 w-full">
+                  <p className="text-gray-700 text-sm sm:text-base">I use my experience to identify <span className="font-semibold">what's truly essential</span> in a strategy to realise outcomes.</p>
                 </div>
               </div>
               <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-[#1db6ac] flex items-center justify-center mb-4">
-                  <span className="text-white font-bold">3</span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#1db6ac] flex items-center justify-center mb-3 sm:mb-4">
+                  <span className="text-white font-bold text-sm sm:text-base">3</span>
                 </div>
-                <div className="bg-[#eff0f0] rounded-lg p-6 flex-1 w-full">
-                  <p className="text-gray-700">I use LLM and LRM to analyse your strategy to create a <span className="font-semibold">completely editable single-page view</span>.</p>
+                <div className="bg-[#eff0f0] rounded-lg p-4 sm:p-6 flex-1 w-full">
+                  <p className="text-gray-700 text-sm sm:text-base">I use LLM and LRM to analyse your strategy to create a <span className="font-semibold">completely editable single-page view</span>.</p>
                 </div>
               </div>
             </div>
