@@ -1,6 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback } from "react";
+import { Montserrat } from "next/font/google";
+
+const montserrat = Montserrat({ subsets: ["latin"], weight: ["700", "800", "900"] });
 
 interface StrategyUploadProps {
   onFileUpload: (file: File) => void;
@@ -24,13 +27,11 @@ export function StrategyUpload({ onFileUpload, isUploading }: StrategyUploadProp
   const validateAndUpload = (file: File) => {
     setUploadError(null);
 
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError("File size exceeds 10MB limit");
+    if (file.size > 20 * 1024 * 1024) {
+      setUploadError("File size exceeds 20MB limit");
       return;
     }
 
-    // Validate file type
     const allowedExtensions = [".pdf", ".docx", ".doc", ".png", ".jpg", ".jpeg", ".tiff"];
     const ext = "." + file.name.split(".").pop()?.toLowerCase();
 
@@ -73,86 +74,60 @@ export function StrategyUpload({ onFileUpload, isUploading }: StrategyUploadProp
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer
-          ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"}
-          ${isUploading ? "opacity-50 pointer-events-none" : ""}
+          border-2 border-dashed rounded-xl p-12 text-center transition-colors
+          ${isUploading ? "border-[#1db6ac] bg-white" : isDragging ? "border-[#1db6ac] bg-teal-50" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"}
+          ${isUploading ? "pointer-events-none" : "cursor-pointer"}
         `}
       >
-        <div className="space-y-4">
-          <div className="flex justify-center">
-            <svg
-              className="w-16 h-16 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+        {isUploading ? (
+          <div className="flex flex-col items-center justify-center py-4">
+            <img src="/coffee-animation.gif" alt="Loading" className="w-24 h-24 mb-4" />
+            <p className={`text-xl font-bold text-[#1db6ac] ${montserrat.className}`}>Good ideas brewing...</p>
+            <p className="text-gray-600 mt-2">This might take a while, but it will be worth it.</p>
           </div>
-          
-          <div>
-            <p className="text-lg text-gray-700 font-medium">
-              {isUploading ? (
-                "Uploading..."
-              ) : (
-                <>
-                  Drop your strategy document here, or{" "}
-                  <label className="text-blue-600 hover:text-blue-700 cursor-pointer font-semibold">
-                    browse
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.tiff"
-                      onChange={handleFileSelect}
-                      disabled={isUploading}
-                    />
-                  </label>
-                </>
-              )}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Supports PDF, Word documents, and images up to 10MB
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-gray-200 mt-6">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">
-              What we&apos;ll extract:
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                "Summary",
-                "Mission",
-                "Values",
-                "Strategic Goals",
-                "Success Measures",
-                "Priorities",
-              ].map((item) => (
-                <span
-                  key={item}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
-                >
-                  {item}
-                </span>
-              ))}
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
+
+            <div>
+              <p className="text-lg text-gray-700 font-medium">
+                Drop your strategy document here
+              </p>
+              <p className="text-sm text-gray-500 mt-1">or click to browse</p>
+            </div>
+
+            <input
+              type="file"
+              onChange={handleFileSelect}
+              accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.tiff"
+              className="hidden"
+              id="file-upload"
+            />
+            <label
+              htmlFor="file-upload"
+              className="inline-block px-6 py-2 rounded-full font-medium transition-colors cursor-pointer bg-gradient-to-r from-blue-400 to-teal-500 text-white hover:from-blue-500 hover:to-teal-600"
+            >
+              Select File
+            </label>
+
+            <p className="text-xs text-gray-400 mt-4">
+              Supported: PDF, Word, PNG, JPEG, TIFF (max 20MB)
+            </p>
           </div>
-        </div>
+        )}
       </div>
 
       {uploadError && (
-        <div className="mt-3 text-sm text-red-600 flex items-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
           {uploadError}
         </div>
       )}
     </div>
   );
 }
+
+
