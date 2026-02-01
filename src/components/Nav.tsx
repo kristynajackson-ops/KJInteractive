@@ -27,7 +27,7 @@
                 <span className="w-full absolute left-0 bottom-0 h-1 bg-[#1db6ac] scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
               </span>
             </a>
-            <a href="/ideas/strategy-interactive" className="group text-gray-700 transition duration-300 no-underline font-semibold relative h-full flex items-stretch">
+            <a href="/strategy-interactive" className="group text-gray-700 transition duration-300 no-underline font-semibold relative h-full flex items-stretch">
               <span className="group-hover:bg-[#eff0f0] group-hover:text-[#1db6ac] w-full h-full transition-colors duration-200 block relative flex items-center justify-center px-4 py-2">
                 Strategy Interactive tool
                 <span className="w-full absolute left-0 bottom-0 h-1 bg-[#1db6ac] scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
