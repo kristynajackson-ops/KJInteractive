@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -10,8 +10,8 @@ export default function Home() {
   const [scale, setScale] = useState(1.2);
   const [hovered, setHovered] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [heroVisible, setHeroVisible] = useState(false);
-  const [aboutImageVisible, setAboutImageVisible] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(true);
+  const [aboutImageVisible, setAboutImageVisible] = useState(true);
   const heroRef = useRef<HTMLDivElement>(null);
   const aboutImageRef = useRef<HTMLDivElement>(null);
 

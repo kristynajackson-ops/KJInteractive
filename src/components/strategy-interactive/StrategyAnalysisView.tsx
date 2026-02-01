@@ -5,6 +5,40 @@ import { Montserrat } from "next/font/google";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["700", "800", "900"] });
 
+// Utility function to calculate responsive font size based on content length
+function getResponsiveFontSize(content: string, type: 'title' | 'content' | 'bullet'): string {
+  const length = content.length;
+  
+  if (type === 'title') {
+    if (length > 50) return 'text-[10px]';
+    if (length > 30) return 'text-xs';
+    return 'text-sm';
+  }
+  
+  if (type === 'bullet') {
+    if (length > 100) return 'text-[9px]';
+    if (length > 60) return 'text-[10px]';
+    return 'text-xs';
+  }
+  
+  // Content text
+  if (length > 500) return 'text-[9px]';
+  if (length > 300) return 'text-[10px]';
+  if (length > 150) return 'text-[11px]';
+  return 'text-xs';
+}
+
+// Calculate font size for list boxes based on total items content
+function getListFontSize(items: string[]): string {
+  const totalLength = items.reduce((acc, item) => acc + item.length, 0);
+  const itemCount = items.length;
+  
+  if (itemCount > 8 || totalLength > 400) return 'text-[9px]';
+  if (itemCount > 6 || totalLength > 250) return 'text-[10px]';
+  if (itemCount > 4 || totalLength > 150) return 'text-[11px]';
+  return 'text-xs';
+}
+
 type BoxTheme = "grey" | "navy" | "teal" | "white" | "midblue" | "skyblue";
 
 const themeStyles: Record<BoxTheme, { bg: string; text: string; title: string; bullet: string }> = {
@@ -164,7 +198,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
           title="Teal theme"
         />
       </div>
-      <div className="p-3">
+      <div className="p-4">
         <div
           ref={titleRef}
           contentEditable
@@ -174,7 +208,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               onTitleChange(titleRef.current.innerText || "");
             }
           }}
-          className={`${styles.title} font-bold text-sm mb-2 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getResponsiveFontSize(title, 'title')} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         />
         <div
@@ -204,7 +238,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               }
             }
           }}
-          className={`${styles.text} text-xs leading-tight outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-2`}
+          className={`${styles.text} ${getResponsiveFontSize(content, 'content')} leading-relaxed outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-2`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         />
         </div>
@@ -230,7 +264,8 @@ function EditableListItem({
   styles, 
   onItemChange, 
   onKeyDown,
-  items 
+  items,
+  fontSize
 }: { 
   item: string; 
   index: number; 
@@ -238,6 +273,7 @@ function EditableListItem({
   onItemChange: (index: number, value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>, index: number, currentText: string) => void;
   items: string[];
+  fontSize: string;
 }) {
   const itemRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
@@ -261,7 +297,7 @@ function EditableListItem({
   
   return (
     <li className="flex items-start gap-2">
-      <span className={`${styles.bullet} font-bold text-xs mt-[1px]`}>&bull;</span>
+      <span className={`${styles.bullet} font-bold ${fontSize} mt-[1px]`}>&bull;</span>
       <div
         ref={itemRef}
         contentEditable
@@ -290,7 +326,7 @@ function EditableListItem({
           const currentText = itemRef.current?.innerText || '';
           onKeyDown(e, index, currentText);
         }}
-        className={`flex-1 border-none outline-none ${styles.text} text-xs bg-transparent leading-tight break-words`}
+        className={`flex-1 border-none outline-none ${styles.text} ${fontSize} bg-transparent leading-relaxed break-words`}
         style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
       />
     </li>
@@ -439,17 +475,17 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
           title="Teal theme"
         />
       </div>
-      <div className="p-3">
+      <div className="p-4">
         <div
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => onTitleChange(e.currentTarget.innerText || "")}
-          className={`${styles.title} font-bold text-sm mb-2 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getResponsiveFontSize(title, 'title')} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         >
           {title}
         </div>
-        <ul ref={listRef} className="space-y-1.5">
+        <ul ref={listRef} className="space-y-2">
           {displayItems.map((item, index) => (
             <EditableListItem
               key={`${index}-${displayItems.length}`}
@@ -459,6 +495,7 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
               onItemChange={handleItemChange}
               onKeyDown={handleKeyDown}
               items={items}
+              fontSize={getListFontSize(items)}
             />
           ))}
         </ul>
