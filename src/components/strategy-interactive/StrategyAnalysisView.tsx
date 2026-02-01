@@ -1325,45 +1325,45 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                     />
                   )}
                 </div>
-                {/* Resize handles - only visible when selected on mobile, or on hover on desktop */}
+                {/* Resize handles - visible when selected on mobile/tablet, or on hover on desktop (lg+) */}
                 <div
-                  className={`absolute top-0 left-0 w-6 h-6 md:w-3 md:h-3 cursor-nw-resize transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute top-0 left-0 w-6 h-6 lg:w-3 lg:h-3 cursor-nw-resize transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
                 />
                 <div
-                  className={`absolute top-0 right-0 w-6 h-6 md:w-3 md:h-3 cursor-ne-resize transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute top-0 right-0 w-6 h-6 lg:w-3 lg:h-3 cursor-ne-resize transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
                 />
                 <div
-                  className={`absolute bottom-0 left-0 w-6 h-6 md:w-3 md:h-3 cursor-sw-resize transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute bottom-0 left-0 w-6 h-6 lg:w-3 lg:h-3 cursor-sw-resize transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
                 />
                 <div
-                  className={`absolute bottom-0 right-0 w-6 h-6 md:w-3 md:h-3 cursor-se-resize transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute bottom-0 right-0 w-6 h-6 lg:w-3 lg:h-3 cursor-se-resize transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
                 />
-                {/* Resize handles - edges (hidden by default, show on selection/hover) */}
+                {/* Resize handles - edges (hidden by default, show on selection for mobile/tablet, hover for desktop) */}
                 <div
-                  className={`absolute top-0 left-6 right-6 md:left-3 md:right-3 h-3 md:h-1 cursor-n-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute top-0 left-6 right-6 lg:left-3 lg:right-3 h-3 lg:h-1 cursor-n-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
                 />
                 <div
-                  className={`absolute right-0 top-6 bottom-6 md:top-3 md:bottom-3 w-3 md:w-1 cursor-e-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute right-0 top-6 bottom-6 lg:top-3 lg:bottom-3 w-3 lg:w-1 cursor-e-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
                 />
                 <div
-                  className={`absolute bottom-0 left-6 right-6 md:left-3 md:right-3 h-3 md:h-1 cursor-s-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute bottom-0 left-6 right-6 lg:left-3 lg:right-3 h-3 lg:h-1 cursor-s-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
                 />
                 <div
-                  className={`absolute left-0 top-6 bottom-6 md:top-3 md:bottom-3 w-3 md:w-1 cursor-w-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} md:opacity-0 md:group-hover/wrapper:opacity-100`}
+                  className={`absolute left-0 top-6 bottom-6 lg:top-3 lg:bottom-3 w-3 lg:w-1 cursor-w-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
                 />
