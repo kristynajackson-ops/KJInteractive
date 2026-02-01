@@ -1012,17 +1012,23 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       </div>
 
       {/* A3 Landscape Canvas - wrapped in shadow container */}
-      <div className="mx-auto shadow-2xl rounded-sm" style={{ maxWidth: '100%' }}>
+      <div 
+        className="mx-auto shadow-2xl rounded-sm w-full overflow-auto"
+        style={{ 
+          maxWidth: '100%',
+          maxHeight: 'calc(100vh - 180px)',
+        }}
+      >
         <div
           ref={a3ContainerRef}
           className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300`}
           style={{
             aspectRatio: '1.414 / 1',
-            maxHeight: 'calc(100vh - 200px)',
-            maxWidth: '100%',
+            minWidth: '800px', // Minimum width to ensure boxes don't get too cramped
+            width: '100%',
           }}
         >
-        <div className="h-full flex flex-col p-6">
+        <div className="h-full flex flex-col p-[2%]">
           {/* Header */}
           <div className="flex items-center justify-between flex-shrink-0 mb-4">
             <div>
@@ -1044,7 +1050,11 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
           {/* Free-form Boxes Container */}
           <div 
             ref={setContainerRef}
-            className="flex-1 relative overflow-hidden"
+            className="flex-1 relative"
+            style={{ 
+              overflow: 'visible',
+              minHeight: 0, // Allow flexbox to calculate proper height
+            }}
           >
             {visibleBoxes.map(box => (
               <div
