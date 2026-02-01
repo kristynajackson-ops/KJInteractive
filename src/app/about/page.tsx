@@ -59,31 +59,31 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <main className="bg-white min-h-screen pt-24 pb-0">
-      <section className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
-          <div ref={imageRef} className={`flex md:justify-start justify-center mt-20 ${imageVisible ? 'banner-animate' : 'opacity-0'}`}>
+    <main className="bg-white min-h-screen pt-20 sm:pt-24 pb-0">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-start">
+          <div ref={imageRef} className={`flex md:justify-start justify-center mt-8 md:mt-20 ${imageVisible ? 'banner-animate' : 'opacity-0'}`}>
             <img 
               src="/kj-about-3.jpg"
               alt="Kristyn Jackson"
               width={256} height={256}
-              className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover shadow-xl scale-[1.75]"
+              className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full object-cover shadow-xl md:scale-[1.75]"
               style={{ objectPosition: 'center 75%' }}
             />
           </div>
 
-          <div className="p-6 md:p-8 md:col-span-2">
-            <h1 className="text-4xl font-extrabold mb-8">About me</h1>
-            <p className="text-black text-lg leading-relaxed">
+          <div className="p-4 sm:p-6 md:p-8 md:col-span-2">
+            <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 sm:mb-8">About me</h1>
+            <p className="text-black text-base sm:text-lg leading-relaxed">
               I&apos;m Kristyn Jackson, better known as KJ. <span className="font-semibold text-black">I&apos;m an interactive strategist.</span>
             </p>
-            <p className="text-black text-lg leading-relaxed mt-4">
+            <p className="text-black text-base sm:text-lg leading-relaxed mt-4">
               What exactly does that mean? It means I make strategy work - ensuring it really resonates with people. <span className="font-semibold text-black">Strategy that remains relevant, is understood, adopted and drives real transformation at every stage.</span>
             </p>
-            <p className="text-black text-lg leading-relaxed mt-4">
+            <p className="text-black text-base sm:text-lg leading-relaxed mt-4">
               How do I do it? I leverage my decade of experience in large-scale digital transformation, service design, systems thinking, and architecture. I&apos;m a certified <span className="font-semibold text-black">"wicked problem critical thinker"</span> and expert <span className="font-semibold text-black">"we needed this yesterday"</span> deliverer.
             </p>
-            <p className="text-black text-lg leading-relaxed mt-4">
+            <p className="text-black text-base sm:text-lg leading-relaxed mt-4">
               I've been privileged to work on some of our generation's biggest transformation programs, and have seen my ideas come to life to transform how people access service.
               <span className="block w-full mt-4 flex justify-center">
                 <a href="#experience" aria-label="Scroll to My experience" className="group">
@@ -97,9 +97,9 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="experience" className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 mt-6">
-        <h2 className="text-4xl font-extrabold mb-8 text-black text-center mt-12">My experience</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-8">
+      <section id="experience" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 mt-6">
+        <h2 className="text-3xl sm:text-4xl font-extrabold mb-6 sm:mb-8 text-black text-center mt-8 sm:mt-12">My experience</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-6 sm:mt-8">
           {/* UNSW Card */}
           <div className="rounded-3xl shadow-sm overflow-hidden bg-white p-6 flex flex-col items-center">
             <div className="h-28 w-28 flex items-center justify-center" style={{ background: '#eff0f0', borderRadius: '9999px', marginBottom: '1.5rem' }}>
@@ -139,12 +139,12 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section ref={bannerRef} id="banner" className={`relative min-h-screen bg-gradient-to-r from-[#eff0f0] to-[#eff0f0] flex items-center justify-start pt-16 pb-16 mb-0 w-full mt-24 shadow-2xl ${bannerVisible ? 'banner-animate' : 'opacity-0'}`}>
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full pl-24 sm:pl-32 lg:pl-48">
-          <h3 className="text-3xl md:text-4xl lg:text-5xl font-light text-black mb-16 max-w-3xl">
+      <section ref={bannerRef} id="banner" className={`relative min-h-screen bg-gradient-to-r from-[#eff0f0] to-[#eff0f0] flex items-center justify-start pt-12 sm:pt-16 pb-12 sm:pb-16 mb-0 w-full mt-16 sm:mt-24 shadow-2xl ${bannerVisible ? 'banner-animate' : 'opacity-0'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 w-full sm:pl-16 md:pl-24 lg:pl-48">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-black mb-8 sm:mb-16 max-w-3xl">
             Hello, practice theory and social transformation.
           </h3>
-          <div className="text-black text-lg leading-relaxed space-y-6 max-w-3xl">
+          <div className="text-black text-base sm:text-lg leading-relaxed space-y-4 sm:space-y-6 max-w-3xl">
             <p className="text-black">
               Before I went into consulting, I was a researcher at the University of Canberra. A grad student with dreams of making an impact.
             </p>

@@ -14,6 +14,13 @@
   transform: scale(1.05);
 }
 
+/* Mobile-specific button adjustments */
+@media (max-width: 640px) {
+  .btn-primary {
+    @apply px-4 py-2 text-sm;
+  }
+}
+
 button, .btn, a.btn, [role="button"] {
   text-decoration: none !important;
 }
@@ -30,6 +37,7 @@ a:hover {
 
 body {
   @apply font-inter;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -44,6 +52,13 @@ h2 {
   font-size: 1.875rem;
   font-weight: 700;
   color: #24658f;
+}
+
+/* Mobile h2 adjustment */
+@media (max-width: 640px) {
+  h2 {
+    font-size: 1.5rem;
+  }
 }
 
 h3, h4, h5, h6 {

@@ -88,23 +88,24 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="bg-white text-blue-900 pt-16">
-        <div className="relative h-[30rem] sm:h-[36rem] bg-white">
+        <div className="relative h-[28rem] sm:h-[30rem] md:h-[36rem] bg-white">
           <img src="/kj-banner-2.jpg" alt="Kristyn Jackson banner" className="absolute inset-0 h-full w-full object-cover object-top" />
           <div className="absolute inset-0 bg-black/30" aria-hidden="true"></div>
           <div className="relative h-full">
             <div className="max-w-7xl mx-auto h-full flex items-center px-4 sm:px-6 lg:px-8">
               <div ref={heroRef} className={`text-left text-white ${heroVisible ? 'hero-animate' : 'opacity-0'}`}>
-                <img src="/kj-logo-white.png" alt="KJ Design" className="mb-4 drop-shadow-lg -ml-8" style={{ maxWidth: '160px', height: 'auto', display: 'block' }} />
-                <p className="text-2xl md:text-4xl font-semibold mb-8 text-white font-montserrat"><span className="font-extrabold">Interactive strategist</span><br /><span className="font-semibold"> &amp; creative thinker.</span></p>
-                <div className="mt-8 flex justify-start space-x-4">
-                  <a href="#about" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105">
+                <img src="/kj-logo-white.png" alt="KJ Design" className="mb-4 drop-shadow-lg -ml-4 sm:-ml-8" style={{ maxWidth: '120px', height: 'auto', display: 'block' }} />
+                <p className="text-xl sm:text-2xl md:text-4xl font-semibold mb-6 sm:mb-8 text-white font-montserrat"><span className="font-extrabold">Interactive strategist</span><br /><span className="font-semibold"> &amp; creative thinker.</span></p>
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:justify-start gap-3 sm:gap-4">
+                  <a href="#about" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
                     About
                   </a>
-                  <a href="#ideas" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105">
+                  <a href="#ideas" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105 text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
                     Ideas
                   </a>
-                <a href="/strategy-interactive" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105 bg-gradient-to-r from-[#1db6ac] to-[#3dd1c7]">
-                    Try the Strategy Interactive tool
+                <a href="/strategy-interactive" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105 bg-gradient-to-r from-[#1db6ac] to-[#3dd1c7] text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3 text-center">
+                    <span className="hidden sm:inline">Try the Strategy Interactive tool</span>
+                    <span className="sm:hidden">Strategy Interactive</span>
                   </a>
                 </div>
               </div>
@@ -121,7 +122,7 @@ export default function Home() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-36 bg-white">
+      <section id="about" className="py-16 sm:py-24 md:py-36 bg-white">
         <style>{`
           @keyframes slideInRight {
             from { transform: translateX(-100px); opacity: 0; }
@@ -134,17 +135,17 @@ export default function Home() {
             animation: slideInRight 1s ease-out forwards;
           }
         `}</style>
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16">
           <div className="text-center">
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div ref={aboutImageRef}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div ref={aboutImageRef} className="overflow-hidden">
               <img 
                 ref={imageRef}
                 src="/iso-1.png" 
                 alt="Kristyn Jackson" 
                 width={600} height={600}
-                className={`max-w-none w-[120%] h-auto object-contain -ml-[10vw] md:-ml-[15vw] lg:-ml-[18vw] cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
+                className={`w-full md:max-w-none md:w-[120%] h-auto object-contain md:-ml-[15vw] lg:-ml-[18vw] cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
                 style={{
                   transition: 'transform 0.3s ease',
                   transform: `scale(${scale}) translateX(${hovered ? '10px' : '0px'})`
@@ -154,14 +155,14 @@ export default function Home() {
                 onMouseLeave={() => setHovered(false)}
               />
             </div>
-            <div className="p-6 md:p-8 md:pl-10 lg:pl-16">
-              <p className="text-black text-lg leading-relaxed">
+            <div className="p-4 sm:p-6 md:p-8 md:pl-10 lg:pl-16">
+              <p className="text-black text-base sm:text-lg leading-relaxed">
                 I&apos;m Kristyn Jackson, better known as KJ. <span className="font-semibold text-black">I&apos;m an interactive strategist.</span>
               </p>
-              <p className="text-black text-lg leading-relaxed mt-4">
+              <p className="text-black text-base sm:text-lg leading-relaxed mt-4">
                 What exactly does that mean? It means <span className="font-semibold">I make strategy work - ensuring it really resonates with people.</span> Strategy that remains relevant, is understood, adopted and drives real transformation at every stage.
               </p>
-              <div className="mt-12">
+              <div className="mt-8 sm:mt-12">
                 <a href="/about" className="btn-primary no-underline transform transition-transform duration-200 hover:scale-105">
                   Read more
                 </a>
@@ -266,8 +267,8 @@ export default function Home() {
       {/* Contact Section */}
       <section id="contact" className="pt-8 pb-8 bg-gradient-to-r from-[#5f5e5c] to-[#6a6665] text-white mb-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-left mb-12">
-            <h2 className="text-3xl font-bold text-white">Reach me</h2>
+          <div className="text-left mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Reach me</h2>
           </div>
           <div className="flex flex-col md:flex-row md:space-x-12">
             <div className="space-y-4">
