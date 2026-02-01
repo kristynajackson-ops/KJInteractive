@@ -796,7 +796,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     setDragStart({ x: e.clientX, y: e.clientY, boxX, boxY });
   }, []);
 
-  // Touch handlers for mobile drag
+  // Touch handlers for mobile drag - touch, hold, drag to move boxes
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string, boxX: number, boxY: number) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.contentEditable === 'true' || target.closest('input') || target.closest('[contenteditable="true"]')) {
@@ -804,9 +804,15 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     }
     const rect = target.closest('.drag-handle');
     if (!rect) return;
+    
+    // Prevent scrolling while dragging
+    e.preventDefault();
+    
     const touch = e.touches[0];
     setDraggedId(id);
     setDragStart({ x: touch.clientX, y: touch.clientY, boxX, boxY });
+    // Also select the box for visual feedback
+    setSelectedBoxId(id);
   }, []);
 
   const handleResizeStart = useCallback((e: React.MouseEvent, id: string, width: number, height: number, boxX: number, boxY: number, corner: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l') => {
@@ -1294,6 +1300,17 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                   setSelectedBoxId(box.id);
                 }}
               >
+                {/* Drag grip indicator - visible when selected on mobile/tablet */}
+                <div 
+                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 transition-opacity ${selectedBoxId === box.id ? 'opacity-60 lg:opacity-0' : 'opacity-0'}`}
+                >
+                  <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'bg-white/30' : 'bg-black/10'}`}>
+                    <svg className={`w-6 h-6 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+                    </svg>
+                    <span className={`text-xs font-medium ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white' : 'text-gray-600'}`}>Hold & drag</span>
+                  </div>
+                </div>
                 <div
                   className="drag-handle cursor-grab active:cursor-grabbing flex-1 flex flex-col"
                   onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
