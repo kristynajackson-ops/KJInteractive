@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Montserrat } from "next/font/google";
 
@@ -37,7 +37,7 @@ export default function StrategyInteractivePage() {
 
   useEffect(() => {
     if (analysisResult && resultsRef.current) {
-      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => { resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
     }
   }, [analysisResult]);
 
@@ -196,6 +196,7 @@ export default function StrategyInteractivePage() {
     </main>
   );
 }
+
 
 
 
