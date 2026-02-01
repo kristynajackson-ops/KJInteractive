@@ -181,7 +181,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
           title="Teal theme"
         />
       </div>
-      <div className="p-4">
+      <div className="p-3">
         <div
           ref={titleRef}
           contentEditable
@@ -191,7 +191,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               onTitleChange(titleRef.current.innerText || "");
             }
           }}
-          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         />
         <div
@@ -221,7 +221,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               }
             }
           }}
-          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-relaxed outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-2`}
+          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-tight outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-1`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         />
         </div>
@@ -310,7 +310,7 @@ function EditableListItem({
           const currentText = itemRef.current?.innerText || '';
           onKeyDown(e, index, currentText);
         }}
-        className={`flex-1 border-none outline-none ${styles.text} ${getFontSizeClass(fontSizeIndex)} bg-transparent leading-relaxed break-words`}
+        className={`flex-1 border-none outline-none ${styles.text} ${getFontSizeClass(fontSizeIndex)} bg-transparent leading-tight break-words`}
         style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
       />
     </li>
@@ -459,17 +459,17 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
           title="Teal theme"
         />
       </div>
-      <div className="p-4">
+      <div className="p-3">
         <div
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => onTitleChange(e.currentTarget.innerText || "")}
-          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         >
           {title}
         </div>
-        <ul ref={listRef} className="space-y-2">
+        <ul ref={listRef} className="space-y-1">
           {displayItems.map((item, index) => (
             <EditableListItem
               key={`${index}-${displayItems.length}`}
