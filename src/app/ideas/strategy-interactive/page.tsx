@@ -142,7 +142,7 @@ export default function StrategyInteractivePage() {
                   <span className="text-white font-bold">1</span>
                 </div>
                 <div className="bg-[#eff0f0] rounded-lg p-6 flex-1 w-full">
-                  <p className="text-gray-700">You have a great strategy that no one really reads because <span class="font-semibold">it's too long</span>.</p>
+                  <p className="text-gray-700">You have a great strategy that no one really reads because <span className="font-semibold">it's too long</span>.</p>
                 </div>
               </div>
               <div className="flex flex-col items-center">
@@ -150,7 +150,7 @@ export default function StrategyInteractivePage() {
                   <span className="text-white font-bold">2</span>
                 </div>
                 <div className="bg-[#eff0f0] rounded-lg p-6 flex-1 w-full">
-                  <p className="text-gray-700">I use my experience to identify <span class="font-semibold">what's truly essential</span> in a strategy to realise outcomes.</p>
+                  <p className="text-gray-700">I use my experience to identify <span className="font-semibold">what's truly essential</span> in a strategy to realise outcomes.</p>
                 </div>
               </div>
               <div className="flex flex-col items-center">
@@ -158,7 +158,7 @@ export default function StrategyInteractivePage() {
                   <span className="text-white font-bold">3</span>
                 </div>
                 <div className="bg-[#eff0f0] rounded-lg p-6 flex-1 w-full">
-                  <p className="text-gray-700">I use LLM and LRM to analyse your strategy to create a <span class="font-semibold">completely editable single-page view</span>.</p>
+                  <p className="text-gray-700">I use LLM and LRM to analyse your strategy to create a <span className="font-semibold">completely editable single-page view</span>.</p>
                 </div>
               </div>
             </div>
