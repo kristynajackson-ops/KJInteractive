@@ -1300,22 +1300,22 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                   setSelectedBoxId(box.id);
                 }}
               >
-                {/* Drag grip indicator - visible when selected on mobile/tablet */}
-                <div 
-                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 transition-opacity ${selectedBoxId === box.id ? 'opacity-60 lg:opacity-0' : 'opacity-0'}`}
-                >
-                  <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'bg-white/30' : 'bg-black/10'}`}>
-                    <svg className={`w-6 h-6 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
-                    </svg>
-                    <span className={`text-xs font-medium ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white' : 'text-gray-600'}`}>Hold & drag</span>
-                  </div>
-                </div>
+                {/* Dedicated drag handle bar at top - easy to grab on all devices */}
                 <div
-                  className="drag-handle cursor-grab active:cursor-grabbing flex-1 flex flex-col"
+                  className={`drag-handle cursor-grab active:cursor-grabbing flex items-center justify-center gap-1 py-1.5 lg:py-1 rounded-t ${
+                    box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' 
+                      ? 'bg-white/20 hover:bg-white/30' 
+                      : 'bg-black/5 hover:bg-black/10'
+                  } transition-colors`}
                   onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
                   onTouchStart={(e) => handleTouchStart(e, box.id, box.x, box.y)}
                 >
+                  <svg className={`w-4 h-4 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white/60' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+                  </svg>
+                </div>
+                {/* Box content - NOT draggable, for editing */}
+                <div className="flex-1 flex flex-col">
                   {box.type === "text" ? (
                     <EditableBox
                       id={box.id}
