@@ -5,38 +5,20 @@ import { Montserrat } from "next/font/google";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["700", "800", "900"] });
 
-// Utility function to calculate responsive font size based on content length
-function getResponsiveFontSize(content: string, type: 'title' | 'content' | 'bullet'): string {
-  const length = content.length;
-  
-  if (type === 'title') {
-    if (length > 50) return 'text-[10px]';
-    if (length > 30) return 'text-xs';
-    return 'text-sm';
-  }
-  
-  if (type === 'bullet') {
-    if (length > 100) return 'text-[9px]';
-    if (length > 60) return 'text-[10px]';
-    return 'text-xs';
-  }
-  
-  // Content text
-  if (length > 500) return 'text-[9px]';
-  if (length > 300) return 'text-[10px]';
-  if (length > 150) return 'text-[11px]';
-  return 'text-xs';
+// Font size options for body text (in pixels)
+const FONT_SIZES = [9, 10, 11, 12, 13, 14] as const;
+type FontSizeIndex = 0 | 1 | 2 | 3 | 4 | 5;
+
+// Get Tailwind class for font size
+function getFontSizeClass(sizeIndex: FontSizeIndex): string {
+  const classes = ['text-[9px]', 'text-[10px]', 'text-[11px]', 'text-xs', 'text-[13px]', 'text-sm'];
+  return classes[sizeIndex];
 }
 
-// Calculate font size for list boxes based on total items content
-function getListFontSize(items: string[]): string {
-  const totalLength = items.reduce((acc, item) => acc + item.length, 0);
-  const itemCount = items.length;
-  
-  if (itemCount > 8 || totalLength > 400) return 'text-[9px]';
-  if (itemCount > 6 || totalLength > 250) return 'text-[10px]';
-  if (itemCount > 4 || totalLength > 150) return 'text-[11px]';
-  return 'text-xs';
+// Get Tailwind class for title (one size larger)
+function getTitleFontSizeClass(sizeIndex: FontSizeIndex): string {
+  const classes = ['text-[10px]', 'text-[11px]', 'text-xs', 'text-[13px]', 'text-sm', 'text-base'];
+  return classes[sizeIndex];
 }
 
 type BoxTheme = "grey" | "navy" | "teal" | "white" | "midblue" | "skyblue";
@@ -93,9 +75,10 @@ interface EditableBoxProps {
   onThemeChange: (theme: BoxTheme) => void;
   onConvertToList: (items: string[]) => void;
   className?: string;
+  fontSizeIndex: FontSizeIndex;
 }
 
-function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, theme, onThemeChange, onConvertToList, className = "" }: EditableBoxProps) {
+function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, theme, onThemeChange, onConvertToList, className = "", fontSizeIndex }: EditableBoxProps) {
   const styles = themeStyles[theme];
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -208,7 +191,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               onTitleChange(titleRef.current.innerText || "");
             }
           }}
-          className={`${styles.title} font-bold ${getResponsiveFontSize(title, 'title')} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         />
         <div
@@ -238,7 +221,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               }
             }
           }}
-          className={`${styles.text} ${getResponsiveFontSize(content, 'content')} leading-relaxed outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-2`}
+          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-relaxed outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-2`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         />
         </div>
@@ -255,6 +238,7 @@ interface EditableListBoxProps {
   theme: BoxTheme;
   onThemeChange: (theme: BoxTheme) => void;
   className?: string;
+  fontSizeIndex: FontSizeIndex;
 }
 
 // Individual list item component to prevent cursor jumping
@@ -265,7 +249,7 @@ function EditableListItem({
   onItemChange, 
   onKeyDown,
   items,
-  fontSize
+  fontSizeIndex
 }: { 
   item: string; 
   index: number; 
@@ -273,7 +257,7 @@ function EditableListItem({
   onItemChange: (index: number, value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>, index: number, currentText: string) => void;
   items: string[];
-  fontSize: string;
+  fontSizeIndex: FontSizeIndex;
 }) {
   const itemRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
@@ -297,7 +281,7 @@ function EditableListItem({
   
   return (
     <li className="flex items-start gap-2">
-      <span className={`${styles.bullet} font-bold ${fontSize} mt-[1px]`}>&bull;</span>
+      <span className={`${styles.bullet} font-bold ${getFontSizeClass(fontSizeIndex)} mt-[1px]`}>&bull;</span>
       <div
         ref={itemRef}
         contentEditable
@@ -326,14 +310,14 @@ function EditableListItem({
           const currentText = itemRef.current?.innerText || '';
           onKeyDown(e, index, currentText);
         }}
-        className={`flex-1 border-none outline-none ${styles.text} ${fontSize} bg-transparent leading-relaxed break-words`}
+        className={`flex-1 border-none outline-none ${styles.text} ${getFontSizeClass(fontSizeIndex)} bg-transparent leading-relaxed break-words`}
         style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
       />
     </li>
   );
 }
 
-function EditableListBox({ title, onTitleChange, items, onChange, onRemove, theme, onThemeChange, className = "" }: EditableListBoxProps) {
+function EditableListBox({ title, onTitleChange, items, onChange, onRemove, theme, onThemeChange, className = "", fontSizeIndex }: EditableListBoxProps) {
   const styles = themeStyles[theme];
   const listRef = useRef<HTMLUListElement>(null);
   
@@ -480,7 +464,7 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => onTitleChange(e.currentTarget.innerText || "")}
-          className={`${styles.title} font-bold ${getResponsiveFontSize(title, 'title')} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-3 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         >
           {title}
@@ -495,7 +479,7 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
               onItemChange={handleItemChange}
               onKeyDown={handleKeyDown}
               items={items}
-              fontSize={getListFontSize(items)}
+              fontSizeIndex={fontSizeIndex}
             />
           ))}
         </ul>
@@ -513,6 +497,18 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Dark mode state
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Font size state (index into FONT_SIZES array, default to index 3 which is 12px/text-xs)
+  const [fontSizeIndex, setFontSizeIndex] = useState<FontSizeIndex>(3);
+
+  // Font size controls
+  const increaseFontSize = useCallback(() => {
+    setFontSizeIndex(prev => Math.min(5, prev + 1) as FontSizeIndex);
+  }, []);
+
+  const decreaseFontSize = useCallback(() => {
+    setFontSizeIndex(prev => Math.max(0, prev - 1) as FontSizeIndex);
+  }, []);
 
   // Transform themes when dark mode toggles
   const transformThemeForDarkMode = useCallback((theme: BoxTheme, toDark: boolean): BoxTheme => {
@@ -971,6 +967,32 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
             </svg>
             Export to PDF
           </button>
+          {/* Font size controls */}
+          <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={decreaseFontSize}
+              disabled={fontSizeIndex === 0}
+              className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-gray-300"
+              title="Decrease font size"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </button>
+            <span className="px-3 py-2 bg-white text-gray-700 text-sm font-medium min-w-[60px] text-center">
+              {FONT_SIZES[fontSizeIndex]}px
+            </span>
+            <button
+              onClick={increaseFontSize}
+              disabled={fontSizeIndex === 5}
+              className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-l border-gray-300"
+              title="Increase font size"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
           <button
             onClick={handleDarkModeToggle}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${isDarkMode ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
@@ -1052,6 +1074,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                       theme={box.theme}
                       onThemeChange={(theme) => updateBox(box.id, { theme })}
                       onConvertToList={(items) => updateBox(box.id, { type: "list", items, content: "" })}
+                      fontSizeIndex={fontSizeIndex}
                     />
                   ) : (
                     <EditableListBox
@@ -1062,6 +1085,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                       onRemove={() => removeBox(box.id)}
                       theme={box.theme}
                       onThemeChange={(theme) => updateBox(box.id, { theme })}
+                      fontSizeIndex={fontSizeIndex}
                     />
                   )}
                 </div>
