@@ -679,6 +679,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Reference to A3 container for PDF export
   const a3ContainerRef = useRef<HTMLDivElement>(null);
+  const a3OuterWrapperRef = useRef<HTMLDivElement>(null);
   const contentWrapperRef = useRef<HTMLDivElement>(null);
   
   // Track container width for scaling content on mobile
@@ -705,7 +706,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   }, []);
 
   const handleExportPdf = useCallback(async () => {
-    if (!a3ContainerRef.current || !contentWrapperRef.current) return;
+    if (!a3OuterWrapperRef.current) return;
     
     // Clear selection to hide resize handles
     setSelectedBoxId(null);
@@ -713,46 +714,34 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     // Dynamically import html2canvas
     const html2canvas = (await import('html2canvas')).default;
     
-    const container = a3ContainerRef.current;
-    const contentWrapper = contentWrapperRef.current;
+    const outerWrapper = a3OuterWrapperRef.current;
     
     // Add class to hide UI elements (drag handles, resize handles) during capture
-    container.classList.add('pdf-export');
+    outerWrapper.classList.add('pdf-export');
     
     // Hide buttons temporarily for capture
-    const buttons = container.querySelectorAll('button');
+    const buttons = outerWrapper.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // html2canvas doesn't handle CSS transforms properly
-    // We need to remove the scale transform and set content to actual visual size
-    const originalTransform = contentWrapper.style.transform;
-    const originalWidth = contentWrapper.style.width;
-    const originalHeight = contentWrapper.style.height;
-    
-    // Reset transform and set to 100% (actual container size)
-    contentWrapper.style.transform = 'none';
-    contentWrapper.style.width = '100%';
-    contentWrapper.style.height = '100%';
-    
-    // Small delay to ensure styles are applied
+    // Small delay to ensure UI elements are hidden
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Capture exactly what's on screen
-    const canvas = await html2canvas(container, {
+    // Get the visual dimensions of the outer wrapper (which clips the scaled content)
+    const rect = outerWrapper.getBoundingClientRect();
+    
+    // Capture the outer wrapper which has overflow-hidden - this gives us the visual output
+    const canvas = await html2canvas(outerWrapper, {
       scale: 3, // High resolution for quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
+      width: rect.width,
+      height: rect.height,
     });
-    
-    // Restore original transform and dimensions
-    contentWrapper.style.transform = originalTransform;
-    contentWrapper.style.width = originalWidth;
-    contentWrapper.style.height = originalHeight;
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
-    container.classList.remove('pdf-export');
+    outerWrapper.classList.remove('pdf-export');
     
     // Convert to PDF using jspdf
     const jsPDF = (await import('jspdf')).default;
@@ -1310,6 +1299,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
       {/* A3 Landscape Canvas - scales to fit viewport on mobile */}
       <div 
+        ref={a3OuterWrapperRef}
         className="mx-auto shadow-2xl rounded-sm w-full overflow-hidden"
         style={{ 
           maxWidth: '100%',
