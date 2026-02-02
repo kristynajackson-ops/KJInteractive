@@ -718,70 +718,35 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     
     const container = a3ContainerRef.current;
     
-    // Clone the container for capture - this avoids modifying the original
-    const clone = container.cloneNode(true) as HTMLElement;
+    // Add class to hide UI elements during capture
+    container.classList.add('pdf-export');
     
-    // Style the clone for capture at design width
-    clone.style.width = `${DESIGN_WIDTH}px`;
-    clone.style.maxWidth = 'none';
-    clone.style.position = 'absolute';
-    clone.style.left = '-9999px';
-    clone.style.top = '0';
-    clone.style.overflow = 'visible';
-    clone.style.zIndex = '-1';
-    clone.style.aspectRatio = 'auto'; // Remove aspect ratio constraint
-    clone.style.height = 'auto'; // Let content determine height
-    clone.classList.add('pdf-export');
+    // Hide buttons temporarily
+    const buttons = container.querySelectorAll('button');
+    buttons.forEach(btn => (btn as HTMLElement).style.visibility = 'hidden');
     
-    // Remove zoom from the content wrapper in the clone
-    const cloneContentWrapper = clone.querySelector('div') as HTMLElement;
-    if (cloneContentWrapper) {
-      cloneContentWrapper.style.zoom = '1';
-    }
+    // Wait for UI updates
+    await new Promise(resolve => setTimeout(resolve, 50));
     
-    // Hide all buttons in the clone
-    const cloneButtons = clone.querySelectorAll('button');
-    cloneButtons.forEach(btn => (btn as HTMLElement).style.display = 'none');
-    
-    // Fix footer - remove negative margins so it's fully captured
-    const allDivs = clone.querySelectorAll('div');
-    allDivs.forEach(div => {
-      const el = div as HTMLElement;
-      // Check for negative margins and remove them
-      const style = window.getComputedStyle(el);
-      if (parseFloat(style.marginBottom) < 0) {
-        el.style.marginBottom = '0';
-      }
-      if (parseFloat(style.marginLeft) < 0) {
-        el.style.marginLeft = '0';
-      }
-      if (parseFloat(style.marginRight) < 0) {
-        el.style.marginRight = '0';
-      }
-    });
-    
-    // Append clone to body for capture
-    document.body.appendChild(clone);
-    
-    // Small delay to ensure styles are applied
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Capture the clone
-    const canvas = await html2canvas(clone, {
-      scale: 3, // High resolution for quality
+    // Capture the container as-is - no layout modifications
+    // Use higher scale to compensate for any zoom
+    const canvas = await html2canvas(container, {
+      scale: 4, // Higher resolution
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
+      logging: false,
     });
     
-    // Remove the clone
-    document.body.removeChild(clone);
+    // Restore buttons
+    buttons.forEach(btn => (btn as HTMLElement).style.visibility = '');
+    container.classList.remove('pdf-export');
     
     const filename = strategyName.replace(/\s+/g, '-').toLowerCase();
     
     if (isMobileOrTablet) {
-      // Mobile/tablet: export as JPG for simplicity
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      // Mobile/tablet: export as JPG
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
       const link = document.createElement('a');
       link.download = `${filename}-strategy.jpg`;
       link.href = imgData;
