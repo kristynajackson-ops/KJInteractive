@@ -705,7 +705,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   }, []);
 
   const handleExport = useCallback(async () => {
-    if (!a3ContainerRef.current || !contentWrapperRef.current) return;
+    if (!a3ContainerRef.current) return;
     
     // Check if mobile/tablet (using screen width - lg breakpoint is 1024px)
     const isMobileOrTablet = window.innerWidth < 1024;
@@ -717,54 +717,52 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
-    const contentWrapper = contentWrapperRef.current;
     
-    // Add class to hide UI elements (drag handles, resize handles) during capture
-    container.classList.add('pdf-export');
+    // Clone the container for capture - this avoids modifying the original
+    const clone = container.cloneNode(true) as HTMLElement;
     
-    // Hide buttons temporarily for capture
-    const buttons = container.querySelectorAll('button');
-    buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
+    // Style the clone for capture at design width
+    clone.style.width = `${DESIGN_WIDTH}px`;
+    clone.style.maxWidth = 'none';
+    clone.style.position = 'absolute';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.overflow = 'visible';
+    clone.style.zIndex = '-1';
+    clone.classList.add('pdf-export');
     
-    // Store original styles
-    const originalZoom = contentWrapper.style.zoom;
-    const originalContainerWidth = container.style.width;
-    const originalContainerMaxWidth = container.style.maxWidth;
-    const originalContainerPosition = container.style.position;
-    const originalContainerLeft = container.style.left;
-    const originalContainerOverflow = container.style.overflow;
+    // Remove zoom from the content wrapper in the clone
+    const cloneContentWrapper = clone.querySelector('div') as HTMLElement;
+    if (cloneContentWrapper) {
+      cloneContentWrapper.style.zoom = '1';
+    }
     
-    // Remove zoom and expand container to design width for clean capture
-    // This prevents clipping and gives html2canvas clean unzoomed content
-    contentWrapper.style.zoom = '1';
-    container.style.width = `${DESIGN_WIDTH}px`;
-    container.style.maxWidth = 'none';
-    container.style.position = 'absolute';
-    container.style.left = '-9999px'; // Move off-screen during capture
-    container.style.overflow = 'visible'; // Allow footer with negative margins to be captured
+    // Hide all buttons in the clone
+    const cloneButtons = clone.querySelectorAll('button');
+    cloneButtons.forEach(btn => (btn as HTMLElement).style.display = 'none');
+    
+    // Fix footer margin in clone
+    const cloneFooter = clone.querySelector('.flex-col > div:last-child') as HTMLElement;
+    if (cloneFooter) {
+      cloneFooter.style.marginBottom = '0';
+    }
+    
+    // Append clone to body for capture
+    document.body.appendChild(clone);
     
     // Small delay to ensure styles are applied
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Capture the expanded container with clean layout
-    const canvas = await html2canvas(container, {
+    // Capture the clone
+    const canvas = await html2canvas(clone, {
       scale: 3, // High resolution for quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
     });
     
-    // Restore all original styles
-    contentWrapper.style.zoom = originalZoom;
-    container.style.width = originalContainerWidth;
-    container.style.maxWidth = originalContainerMaxWidth;
-    container.style.position = originalContainerPosition;
-    container.style.left = originalContainerLeft;
-    container.style.overflow = originalContainerOverflow;
-    
-    // Show buttons and remove export class
-    buttons.forEach(btn => (btn as HTMLElement).style.display = '');
-    container.classList.remove('pdf-export');
+    // Remove the clone
+    document.body.removeChild(clone);
     
     const filename = strategyName.replace(/\s+/g, '-').toLowerCase();
     
