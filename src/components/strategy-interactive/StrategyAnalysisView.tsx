@@ -683,25 +683,62 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   const handleExportPdf = useCallback(async () => {
     if (!a3ContainerRef.current) return;
     
+    // Clear selection to hide resize handles and drag bars
+    setSelectedBoxId(null);
+    
     // Dynamically import html2canvas
     const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
     
+    // Add class to hide UI elements during capture
+    container.classList.add('pdf-export');
+    
     // Hide buttons temporarily for capture
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
+    
+    // Store original styles
+    const originalWidth = container.style.width;
+    const originalMinWidth = container.style.minWidth;
+    const originalTransform = container.style.transform;
+    const parentElement = container.parentElement;
+    const originalParentOverflow = parentElement?.style.overflow || '';
+    
+    // Set fixed width to ensure proper text rendering for A3 landscape
+    // A3 landscape aspect ratio is 420mm x 297mm (1.414:1)
+    // Use a large fixed width to ensure text doesn't wrap incorrectly
+    container.style.width = '1200px';
+    container.style.minWidth = '1200px';
+    container.style.transform = 'scale(1)';
+    if (parentElement) {
+      parentElement.style.overflow = 'visible';
+    }
+    
+    // Small delay to ensure React has re-rendered without selection and with new width
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Capture the A3 container
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: null,
+      width: 1200,
+      windowWidth: 1200,
     });
     
-    // Show buttons again
+    // Restore original styles
+    container.style.width = originalWidth;
+    container.style.minWidth = originalMinWidth;
+    container.style.transform = originalTransform;
+    if (parentElement) {
+      parentElement.style.overflow = originalParentOverflow;
+    }
+    
+    // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
+    container.classList.remove('pdf-export');
     
     // Convert to PDF using jspdf
     const jsPDF = (await import('jspdf')).default;
@@ -1342,45 +1379,45 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                     />
                   )}
                 </div>
-                {/* Resize handles - visible when selected on mobile/tablet, or on hover on desktop (lg+) */}
+                {/* Resize handles - visible when selected on mobile/tablet, or on hover on desktop (lg+) - more subtle styling */}
                 <div
-                  className={`absolute top-0 left-0 w-6 h-6 lg:w-3 lg:h-3 cursor-nw-resize transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute top-0 left-0 w-5 h-5 lg:w-2 lg:h-2 cursor-nw-resize transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
                 />
                 <div
-                  className={`absolute top-0 right-0 w-6 h-6 lg:w-3 lg:h-3 cursor-ne-resize transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute top-0 right-0 w-5 h-5 lg:w-2 lg:h-2 cursor-ne-resize transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
                 />
                 <div
-                  className={`absolute bottom-0 left-0 w-6 h-6 lg:w-3 lg:h-3 cursor-sw-resize transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute bottom-0 left-0 w-5 h-5 lg:w-2 lg:h-2 cursor-sw-resize transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
                 />
                 <div
-                  className={`absolute bottom-0 right-0 w-6 h-6 lg:w-3 lg:h-3 cursor-se-resize transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute bottom-0 right-0 w-5 h-5 lg:w-2 lg:h-2 cursor-se-resize transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
                 />
                 {/* Resize handles - edges (hidden by default, show on selection for mobile/tablet, hover for desktop) */}
                 <div
-                  className={`absolute top-0 left-6 right-6 lg:left-3 lg:right-3 h-3 lg:h-1 cursor-n-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute top-0 left-5 right-5 lg:left-2 lg:right-2 h-2 lg:h-0.5 cursor-n-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
                 />
                 <div
-                  className={`absolute right-0 top-6 bottom-6 lg:top-3 lg:bottom-3 w-3 lg:w-1 cursor-e-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute right-0 top-5 bottom-5 lg:top-2 lg:bottom-2 w-2 lg:w-0.5 cursor-e-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
                 />
                 <div
-                  className={`absolute bottom-0 left-6 right-6 lg:left-3 lg:right-3 h-3 lg:h-1 cursor-s-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute bottom-0 left-5 right-5 lg:left-2 lg:right-2 h-2 lg:h-0.5 cursor-s-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
                 />
                 <div
-                  className={`absolute left-0 top-6 bottom-6 lg:top-3 lg:bottom-3 w-3 lg:w-1 cursor-w-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'} ${selectedBoxId === box.id ? 'opacity-100' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-100`}
+                  className={`resize-handle absolute left-0 top-5 bottom-5 lg:top-2 lg:bottom-2 w-2 lg:w-0.5 cursor-w-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
                   onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
                 />
