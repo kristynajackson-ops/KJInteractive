@@ -1440,6 +1440,14 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
       {/* Print Styles */}
       <style jsx global>{`
+        /* PDF Export - hide UI elements during capture */
+        .pdf-export .drag-handle {
+          display: none !important;
+        }
+        .pdf-export .resize-handle {
+          display: none !important;
+        }
+        
         @media print {
           @page {
             size: A3 landscape;
