@@ -707,78 +707,32 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   const handleExportPdf = useCallback(async () => {
     if (!a3ContainerRef.current) return;
     
-    // Clear selection to hide resize handles and drag bars
+    // Clear selection to hide resize handles
     setSelectedBoxId(null);
     
     // Dynamically import html2canvas
     const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
-    const contentWrapper = contentWrapperRef.current;
     
-    // Add class to hide UI elements during capture
+    // Add class to hide UI elements (drag handles, resize handles) during capture
     container.classList.add('pdf-export');
     
     // Hide buttons temporarily for capture
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Store original container styles
-    const originalContainerWidth = container.style.width;
-    const originalContainerMaxWidth = container.style.maxWidth;
-    const originalContainerPosition = container.style.position;
-    
-    // Store original content wrapper styles
-    const originalTransform = contentWrapper?.style.transform || '';
-    const originalWrapperWidth = contentWrapper?.style.width || '';
-    const originalWrapperHeight = contentWrapper?.style.height || '';
-    
-    // Temporarily set container to design width for proper layout
-    // This ensures text doesn't spread on mobile/tablet
-    container.style.width = `${DESIGN_WIDTH}px`;
-    container.style.maxWidth = 'none';
-    container.style.position = 'absolute'; // Take out of flow to avoid affecting page layout
-    
-    // Reset content wrapper scaling (since container is now at design width)
-    if (contentWrapper) {
-      contentWrapper.style.transform = 'none';
-      contentWrapper.style.width = '100%';
-      contentWrapper.style.height = '100%';
-    }
-    
-    // Small delay to ensure styles are applied
+    // Small delay to ensure UI elements are hidden
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Get the dimensions at design width
-    const containerRect = container.getBoundingClientRect();
-    const containerWidth = containerRect.width;
-    const containerHeight = containerRect.height;
-    
-    // Calculate scale factor to get a high-quality capture
-    // Target at least 2400px wide for good A3 print quality
-    const scaleFactor = Math.max(3, 2400 / containerWidth);
-    
-    // Capture the A3 container at design size with high scale
+    // Capture exactly what's on screen - no resizing, no scaling changes
+    // Just a precise snapshot of the current canvas appearance
     const canvas = await html2canvas(container, {
-      scale: scaleFactor,
+      scale: 3, // High resolution for quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
-      width: containerWidth,
-      height: containerHeight,
     });
-    
-    // Restore original container styles
-    container.style.width = originalContainerWidth;
-    container.style.maxWidth = originalContainerMaxWidth;
-    container.style.position = originalContainerPosition;
-    
-    // Restore original content wrapper styles
-    if (contentWrapper) {
-      contentWrapper.style.transform = originalTransform;
-      contentWrapper.style.width = originalWrapperWidth;
-      contentWrapper.style.height = originalWrapperHeight;
-    }
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
