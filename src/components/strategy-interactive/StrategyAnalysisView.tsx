@@ -191,7 +191,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               onTitleChange(titleRef.current.innerText || "");
             }
           }}
-          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className} pl-7 lg:pl-0`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         />
         <div
@@ -464,7 +464,7 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => onTitleChange(e.currentTarget.innerText || "")}
-          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className} pl-7 lg:pl-0`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className}`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         >
           {title}
@@ -1371,7 +1371,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={(e) => setStrategyName(e.currentTarget.innerText || initialStrategyName)}
-                className={`text-xl font-black capitalize leading-tight outline-none border-b-2 border-transparent hover:border-[#1db6ac] focus:border-[#1db6ac] transition-colors ${isDarkMode ? 'text-white' : 'text-[#1e3a5f]'} ${montserrat.className}`}
+                className={`text-xl font-black capitalize leading-tight outline-none border-b-2 border-transparent hover:border-[#1db6ac] focus:border-[#1db6ac] transition-colors whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-[#1e3a5f]'} ${montserrat.className}`}
               >
                 {strategyName}
               </h1>
@@ -1412,17 +1412,17 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
               >
                 {/* Box content wrapper */}
                 <div className="flex-1 flex flex-col relative">
-                  {/* Drag handle - inside box, top-left corner, mobile/tablet only */}
+                  {/* Drag handle - floats above box content, mobile/tablet only */}
                   <div
-                    className={`drag-handle lg:hidden absolute top-1 left-1 z-20 cursor-grab active:cursor-grabbing p-1.5 rounded ${
+                    className={`drag-handle lg:hidden absolute -top-1 -left-1 z-20 cursor-grab active:cursor-grabbing p-1 rounded ${
                       box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' 
-                        ? 'bg-white/20 active:bg-white/30' 
-                        : 'bg-black/10 active:bg-black/15'
-                    } transition-colors`}
+                        ? 'bg-white/30 active:bg-white/40' 
+                        : 'bg-gray-200/80 active:bg-gray-300/80'
+                    } transition-colors shadow-sm`}
                     onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
                     onTouchStart={(e) => handleTouchStart(e, box.id, box.x, box.y)}
                   >
-                    <svg className={`w-4 h-4 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white/70' : 'text-gray-500'}`} fill="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-3.5 h-3.5 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white/80' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
                     </svg>
                   </div>
