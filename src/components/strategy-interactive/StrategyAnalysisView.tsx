@@ -181,7 +181,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
           title="Teal theme"
         />
       </div>
-      <div className="p-3">
+      <div className="p-3 pt-2 lg:pt-3">
         <div
           ref={titleRef}
           contentEditable
@@ -191,7 +191,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               onTitleChange(titleRef.current.innerText || "");
             }
           }}
-          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className} pl-7 lg:pl-0`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         />
         <div
@@ -459,12 +459,12 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
           title="Teal theme"
         />
       </div>
-      <div className="p-3">
+      <div className="p-3 pt-2 lg:pt-3">
         <div
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => onTitleChange(e.currentTarget.innerText || "")}
-          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className}`}
+          className={`${styles.title} font-bold ${getTitleFontSizeClass(fontSizeIndex)} mb-1 bg-transparent border-none outline-none w-full ${montserrat.className} pl-7 lg:pl-0`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', minHeight: '1em' }}
         >
           {title}
@@ -1341,22 +1341,22 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                   setSelectedBoxId(box.id);
                 }}
               >
-                {/* Dedicated drag handle bar at top - easy to grab on all devices */}
-                <div
-                  className={`drag-handle cursor-grab active:cursor-grabbing flex items-center justify-center gap-1 py-1.5 lg:py-1 rounded-t ${
-                    box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' 
-                      ? 'bg-white/20 hover:bg-white/30' 
-                      : 'bg-black/5 hover:bg-black/10'
-                  } transition-colors`}
-                  onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
-                  onTouchStart={(e) => handleTouchStart(e, box.id, box.x, box.y)}
-                >
-                  <svg className={`w-4 h-4 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white/60' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
-                  </svg>
-                </div>
-                {/* Box content - NOT draggable, for editing */}
-                <div className="flex-1 flex flex-col">
+                {/* Box content wrapper */}
+                <div className="flex-1 flex flex-col relative">
+                  {/* Drag handle - inside box, top-left corner, mobile/tablet only */}
+                  <div
+                    className={`drag-handle lg:hidden absolute top-1 left-1 z-20 cursor-grab active:cursor-grabbing p-1.5 rounded ${
+                      box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' 
+                        ? 'bg-white/20 active:bg-white/30' 
+                        : 'bg-black/10 active:bg-black/15'
+                    } transition-colors`}
+                    onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
+                    onTouchStart={(e) => handleTouchStart(e, box.id, box.x, box.y)}
+                  >
+                    <svg className={`w-4 h-4 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white/70' : 'text-gray-500'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+                    </svg>
+                  </div>
                   {box.type === "text" ? (
                     <EditableBox
                       id={box.id}
