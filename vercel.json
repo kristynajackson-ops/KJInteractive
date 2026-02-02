@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/strategy-interactive/:path*",
+      "destination": "/:path*"
+    }
+  ]
+}
