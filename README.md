@@ -1,6 +1,6 @@
 # Strategy Interactive - Document Comparison Tool
 
-A web-based application for comparing documents (PDF, Word, Images) to identify similarities and differences.
+A web-based application for comparing documents (PDF, Word) to identify similarities and differences.
 
 ## Project Structure
 
@@ -20,8 +20,8 @@ strategy-interactive/
 
 ## Features
 
-- **Document Upload**: Support for PDF, Word (.docx), and images (PNG, JPEG, TIFF)
-- **Text Extraction**: Automatic text extraction using PyMuPDF, python-docx, and Tesseract OCR
+- **Document Upload**: Support for PDF, Word (.docx, .doc)
+- **Text Extraction**: Automatic text extraction using PyMuPDF, python-docx, and Tesseract OCR for images embedded in PDFs
 - **Multi-level Comparison**:
   - Sentence by sentence
   - Paragraph by paragraph
