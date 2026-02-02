@@ -710,14 +710,12 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     // Show loading indicator
     setIsExporting(true);
     
-    // Check if mobile/tablet (using screen width - lg breakpoint is 1024px)
-    const isMobileOrTablet = window.innerWidth < 1024;
-    
     // Clear selection to hide resize handles
     setSelectedBoxId(null);
     
-    // Dynamically import html2canvas
-    const html2canvas = (await import('html2canvas')).default;
+    // Dynamically import modern-screenshot and jsPDF
+    const { domToCanvas } = await import('modern-screenshot');
+    const jsPDF = (await import('jspdf')).default;
     
     const container = a3ContainerRef.current;
     const contentWrapper = contentWrapperRef.current;
@@ -752,48 +750,16 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       footer.style.marginRight = '0';
     }
     
-    // Disable contentEditable and force text styles to prevent spacing issues
-    const editableElements = container.querySelectorAll('[contenteditable="true"]');
-    const originalStates: { el: HTMLElement; editable: string; styles: { wordSpacing: string; letterSpacing: string; whiteSpace: string; textAlign: string } }[] = [];
-    
-    editableElements.forEach(el => {
-      const htmlEl = el as HTMLElement;
-      // Save original state
-      originalStates.push({
-        el: htmlEl,
-        editable: htmlEl.getAttribute('contenteditable') || 'true',
-        styles: {
-          wordSpacing: htmlEl.style.wordSpacing,
-          letterSpacing: htmlEl.style.letterSpacing,
-          whiteSpace: htmlEl.style.whiteSpace,
-          textAlign: htmlEl.style.textAlign,
-        }
-      });
-      // Disable editing and force text styles
-      htmlEl.setAttribute('contenteditable', 'false');
-      htmlEl.style.wordSpacing = '0px';
-      htmlEl.style.letterSpacing = 'normal';
-      htmlEl.style.whiteSpace = 'pre-wrap';
-      htmlEl.style.textAlign = 'left';
-    });
-    
     // Force synchronous reflow by reading layout property
     void container.offsetHeight;
     
-    // Wait for text layout to fully settle
-    await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        setTimeout(resolve, 400);
-      });
-    });
+    // Wait for layout to settle
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Capture
-    const canvas = await html2canvas(container, {
+    // Capture using modern-screenshot
+    const canvas = await domToCanvas(container, {
       scale: 3,
-      useCORS: true,
-      allowTaint: true,
       backgroundColor: null,
-      logging: false,
     });
     
     // Restore all original styles immediately
@@ -806,15 +772,6 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       footer.style.marginRight = originalFooterMarginRight;
     }
     
-    // Restore contentEditable and text styles
-    originalStates.forEach(({ el, editable, styles }) => {
-      el.setAttribute('contenteditable', editable);
-      el.style.wordSpacing = styles.wordSpacing;
-      el.style.letterSpacing = styles.letterSpacing;
-      el.style.whiteSpace = styles.whiteSpace;
-      el.style.textAlign = styles.textAlign;
-    });
-    
     // Restore buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.visibility = '');
     container.classList.remove('pdf-export');
@@ -824,52 +781,41 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     
     const filename = strategyName.replace(/\s+/g, '-').toLowerCase();
     
-    if (isMobileOrTablet) {
-      // Mobile/tablet: export as JPG
-      const imgData = canvas.toDataURL('image/jpeg', 0.92);
-      const link = document.createElement('a');
-      link.download = `${filename}-strategy.jpg`;
-      link.href = imgData;
-      link.click();
+    // Export as PDF for all devices (unified experience)
+    // A3 landscape dimensions in mm
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a3',
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    
+    // Calculate dimensions to fit the canvas proportionally into A3
+    const canvasAspect = canvas.width / canvas.height;
+    const pdfAspect = pdfWidth / pdfHeight;
+    
+    let finalWidth = pdfWidth;
+    let finalHeight = pdfHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    if (canvasAspect > pdfAspect) {
+      // Canvas is wider - fit to width
+      finalWidth = pdfWidth;
+      finalHeight = pdfWidth / canvasAspect;
+      offsetY = (pdfHeight - finalHeight) / 2;
     } else {
-      // Desktop: export as PDF
-      const jsPDF = (await import('jspdf')).default;
-      
-      // A3 landscape dimensions in mm
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a3',
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      // Calculate dimensions to fit the canvas proportionally into A3
-      const canvasAspect = canvas.width / canvas.height;
-      const pdfAspect = pdfWidth / pdfHeight;
-      
-      let finalWidth = pdfWidth;
-      let finalHeight = pdfHeight;
-      let offsetX = 0;
-      let offsetY = 0;
-      
-      if (canvasAspect > pdfAspect) {
-        // Canvas is wider - fit to width
-        finalWidth = pdfWidth;
-        finalHeight = pdfWidth / canvasAspect;
-        offsetY = (pdfHeight - finalHeight) / 2;
-      } else {
-        // Canvas is taller - fit to height
-        finalHeight = pdfHeight;
-        finalWidth = pdfHeight * canvasAspect;
-        offsetX = (pdfWidth - finalWidth) / 2;
-      }
-      
-      pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
-      pdf.save(`${filename}-strategy.pdf`);
+      // Canvas is taller - fit to height
+      finalHeight = pdfHeight;
+      finalWidth = pdfHeight * canvasAspect;
+      offsetX = (pdfWidth - finalWidth) / 2;
     }
+    
+    pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+    pdf.save(`${filename}-strategy.pdf`);
   }, [strategyName]);
 
   const updateBox = useCallback((id: string, updates: Partial<BoxData>) => {
