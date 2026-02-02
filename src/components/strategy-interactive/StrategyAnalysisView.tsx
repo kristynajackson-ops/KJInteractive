@@ -705,7 +705,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   }, []);
 
   const handleExportPdf = useCallback(async () => {
-    if (!a3ContainerRef.current) return;
+    if (!a3ContainerRef.current || !contentWrapperRef.current) return;
     
     // Clear selection to hide resize handles
     setSelectedBoxId(null);
@@ -714,6 +714,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
+    const contentWrapper = contentWrapperRef.current;
     
     // Add class to hide UI elements (drag handles, resize handles) during capture
     container.classList.add('pdf-export');
@@ -722,21 +723,24 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Small delay to ensure UI elements are hidden
+    // Temporarily remove zoom for clean html2canvas capture
+    // html2canvas doesn't handle zoom or transform properly
+    const originalZoom = contentWrapper.style.zoom;
+    contentWrapper.style.zoom = '1';
+    
+    // Small delay to ensure styles are applied
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Get the visual dimensions of the container
-    const rect = container.getBoundingClientRect();
-    
-    // Capture the container which has overflow-hidden and A3 aspect ratio
+    // Capture without zoom - html2canvas will get clean unzoomed content
     const canvas = await html2canvas(container, {
       scale: 3, // High resolution for quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
-      width: rect.width,
-      height: rect.height,
     });
+    
+    // Restore zoom
+    contentWrapper.style.zoom = originalZoom;
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
