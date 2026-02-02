@@ -221,7 +221,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               }
             }
           }}
-          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-tight outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-1`}
+          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-tight outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-1 text-left`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         />
         </div>
