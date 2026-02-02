@@ -679,6 +679,29 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Reference to A3 container for PDF export
   const a3ContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Track container width for scaling content on mobile
+  const [canvasScale, setCanvasScale] = useState(1);
+  const DESIGN_WIDTH = 900; // Reference width for design (px) - content designed at this width
+  
+  // Update scale when container resizes
+  useEffect(() => {
+    const updateScale = () => {
+      if (a3ContainerRef.current) {
+        const containerWidth = a3ContainerRef.current.offsetWidth;
+        // Only scale down on smaller screens (below design width)
+        if (containerWidth < DESIGN_WIDTH) {
+          setCanvasScale(containerWidth / DESIGN_WIDTH);
+        } else {
+          setCanvasScale(1);
+        }
+      }
+    };
+    
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const handleExportPdf = useCallback(async () => {
     if (!a3ContainerRef.current) return;
@@ -1287,14 +1310,25 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       >
         <div
           ref={a3ContainerRef}
-          className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300 origin-top-left`}
+          className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300 origin-top-left overflow-hidden`}
           style={{
             aspectRatio: '1.414 / 1',
             width: '100%',
             minWidth: '0', // Allow scaling down on mobile
           }}
         >
-        <div className="h-full flex flex-col p-[2%]">
+        {/* Content wrapper with proportional scaling on mobile */}
+        <div 
+          className="h-full flex flex-col p-[2%]"
+          style={{
+            // Scale content proportionally when container is smaller than design width
+            // This ensures text and spacing remain proportional to A3 dimensions
+            transform: canvasScale < 1 ? `scale(${canvasScale})` : 'none',
+            transformOrigin: 'top left',
+            width: canvasScale < 1 ? `${100 / canvasScale}%` : '100%',
+            height: canvasScale < 1 ? `${100 / canvasScale}%` : '100%',
+          }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between flex-shrink-0 mb-4">
             <div>
