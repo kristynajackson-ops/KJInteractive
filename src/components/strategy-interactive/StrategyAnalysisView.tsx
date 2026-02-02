@@ -752,10 +752,19 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       footer.style.marginRight = '0';
     }
     
+    // Force text re-render by re-assigning innerText on all contentEditable elements
+    // This forces the browser to recalculate text layout from scratch
+    const editableElements = container.querySelectorAll('[contenteditable="true"]');
+    editableElements.forEach(el => {
+      const htmlEl = el as HTMLElement;
+      const text = htmlEl.innerText;
+      htmlEl.innerText = text;
+    });
+    
     // Force synchronous reflow by reading layout property
     void container.offsetHeight;
     
-    // Wait longer for text layout to fully settle (especially on mobile)
+    // Wait for text layout to fully settle
     await new Promise(resolve => {
       requestAnimationFrame(() => {
         setTimeout(resolve, 400);
