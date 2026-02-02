@@ -1310,14 +1310,14 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
       {/* A3 Landscape Canvas - scales to fit viewport on mobile */}
       <div 
-        className="mx-auto shadow-2xl rounded-sm w-full"
+        className="mx-auto shadow-2xl rounded-sm w-full overflow-hidden"
         style={{ 
           maxWidth: '100%',
         }}
       >
         <div
           ref={a3ContainerRef}
-          className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300 origin-top-left overflow-hidden`}
+          className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300 origin-top-left`}
           style={{
             aspectRatio: '1.414 / 1',
             width: '100%',
