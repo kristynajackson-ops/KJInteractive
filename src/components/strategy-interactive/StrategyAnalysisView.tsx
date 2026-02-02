@@ -707,6 +707,9 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   const handleExport = useCallback(async () => {
     if (!a3ContainerRef.current || !contentWrapperRef.current) return;
     
+    // Show loading indicator
+    setIsExporting(true);
+    
     // Check if mobile/tablet (using screen width - lg breakpoint is 1024px)
     const isMobileOrTablet = window.innerWidth < 1024;
     
@@ -749,10 +752,13 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       footer.style.marginRight = '0';
     }
     
-    // Wait for reflow - use requestAnimationFrame + setTimeout for reliability
+    // Force synchronous reflow by reading layout property
+    void container.offsetHeight;
+    
+    // Wait longer for text layout to fully settle (especially on mobile)
     await new Promise(resolve => {
       requestAnimationFrame(() => {
-        setTimeout(resolve, 150);
+        setTimeout(resolve, 400);
       });
     });
     
@@ -778,6 +784,9 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     // Restore buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.visibility = '');
     container.classList.remove('pdf-export');
+    
+    // Hide loading indicator
+    setIsExporting(false);
     
     const filename = strategyName.replace(/\s+/g, '-').toLowerCase();
     
@@ -871,6 +880,9 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Selected box for mobile (shows resize handles only on selected box)
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
+  
+  // Export loading state
+  const [isExporting, setIsExporting] = useState(false);
 
   // Refs to track current state for touch/mouse handlers (avoids stale closure issues)
   const draggedIdRef = useRef<string | null>(null);
@@ -1096,7 +1108,17 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   const hiddenBoxes = boxes.filter(box => !box.visible);
 
   return (
-    <div className="strategy-canvas w-full">
+    <div className="strategy-canvas w-full relative">
+      {/* Export Loading Overlay */}
+      {isExporting && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-xl p-6 flex flex-col items-center gap-3 shadow-xl">
+            <div className="w-10 h-10 border-4 border-[#1db6ac] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium text-gray-700">Preparing export...</span>
+          </div>
+        </div>
+      )}
+      
       {/* Print Controls */}
       <div className="print:hidden mb-4">
         {/* Mobile: Analysis info on top */}
