@@ -723,23 +723,33 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Temporarily reset scaling for accurate capture
-    // Store original styles
-    const originalTransform = contentWrapper?.style.transform || '';
-    const originalWidth = contentWrapper?.style.width || '';
-    const originalHeight = contentWrapper?.style.height || '';
+    // Store original container styles
+    const originalContainerWidth = container.style.width;
+    const originalContainerMaxWidth = container.style.maxWidth;
+    const originalContainerPosition = container.style.position;
     
-    // Reset to unscaled state for capture
+    // Store original content wrapper styles
+    const originalTransform = contentWrapper?.style.transform || '';
+    const originalWrapperWidth = contentWrapper?.style.width || '';
+    const originalWrapperHeight = contentWrapper?.style.height || '';
+    
+    // Temporarily set container to design width for proper layout
+    // This ensures text doesn't spread on mobile/tablet
+    container.style.width = `${DESIGN_WIDTH}px`;
+    container.style.maxWidth = 'none';
+    container.style.position = 'absolute'; // Take out of flow to avoid affecting page layout
+    
+    // Reset content wrapper scaling (since container is now at design width)
     if (contentWrapper) {
       contentWrapper.style.transform = 'none';
       contentWrapper.style.width = '100%';
       contentWrapper.style.height = '100%';
     }
     
-    // Small delay to ensure React has re-rendered without selection
+    // Small delay to ensure styles are applied
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Get the actual rendered dimensions of the container
+    // Get the dimensions at design width
     const containerRect = container.getBoundingClientRect();
     const containerWidth = containerRect.width;
     const containerHeight = containerRect.height;
@@ -748,7 +758,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     // Target at least 2400px wide for good A3 print quality
     const scaleFactor = Math.max(3, 2400 / containerWidth);
     
-    // Capture the A3 container at its current size but with high scale
+    // Capture the A3 container at design size with high scale
     const canvas = await html2canvas(container, {
       scale: scaleFactor,
       useCORS: true,
@@ -758,11 +768,16 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       height: containerHeight,
     });
     
-    // Restore original scaling styles
+    // Restore original container styles
+    container.style.width = originalContainerWidth;
+    container.style.maxWidth = originalContainerMaxWidth;
+    container.style.position = originalContainerPosition;
+    
+    // Restore original content wrapper styles
     if (contentWrapper) {
       contentWrapper.style.transform = originalTransform;
-      contentWrapper.style.width = originalWidth;
-      contentWrapper.style.height = originalHeight;
+      contentWrapper.style.width = originalWrapperWidth;
+      contentWrapper.style.height = originalWrapperHeight;
     }
     
     // Show buttons and remove export class
