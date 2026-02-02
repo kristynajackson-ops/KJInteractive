@@ -704,8 +704,11 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     return () => window.removeEventListener('resize', updateScale);
   }, []);
 
-  const handleExportPdf = useCallback(async () => {
+  const handleExport = useCallback(async () => {
     if (!a3ContainerRef.current || !contentWrapperRef.current) return;
+    
+    // Check if mobile/tablet (using screen width - lg breakpoint is 1024px)
+    const isMobileOrTablet = window.innerWidth < 1024;
     
     // Clear selection to hide resize handles
     setSelectedBoxId(null);
@@ -729,6 +732,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const originalContainerMaxWidth = container.style.maxWidth;
     const originalContainerPosition = container.style.position;
     const originalContainerLeft = container.style.left;
+    const originalContainerOverflow = container.style.overflow;
     
     // Remove zoom and expand container to design width for clean capture
     // This prevents clipping and gives html2canvas clean unzoomed content
@@ -737,6 +741,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     container.style.maxWidth = 'none';
     container.style.position = 'absolute';
     container.style.left = '-9999px'; // Move off-screen during capture
+    container.style.overflow = 'visible'; // Allow footer with negative margins to be captured
     
     // Small delay to ensure styles are applied
     await new Promise(resolve => setTimeout(resolve, 150));
@@ -755,48 +760,60 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     container.style.maxWidth = originalContainerMaxWidth;
     container.style.position = originalContainerPosition;
     container.style.left = originalContainerLeft;
+    container.style.overflow = originalContainerOverflow;
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
     container.classList.remove('pdf-export');
     
-    // Convert to PDF using jspdf
-    const jsPDF = (await import('jspdf')).default;
+    const filename = strategyName.replace(/\s+/g, '-').toLowerCase();
     
-    // A3 landscape dimensions in mm
-    const pdf = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a3',
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    
-    // Calculate dimensions to fit the canvas proportionally into A3
-    const canvasAspect = canvas.width / canvas.height;
-    const pdfAspect = pdfWidth / pdfHeight;
-    
-    let finalWidth = pdfWidth;
-    let finalHeight = pdfHeight;
-    let offsetX = 0;
-    let offsetY = 0;
-    
-    if (canvasAspect > pdfAspect) {
-      // Canvas is wider - fit to width
-      finalWidth = pdfWidth;
-      finalHeight = pdfWidth / canvasAspect;
-      offsetY = (pdfHeight - finalHeight) / 2;
+    if (isMobileOrTablet) {
+      // Mobile/tablet: export as JPG for simplicity
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const link = document.createElement('a');
+      link.download = `${filename}-strategy.jpg`;
+      link.href = imgData;
+      link.click();
     } else {
-      // Canvas is taller - fit to height
-      finalHeight = pdfHeight;
-      finalWidth = pdfHeight * canvasAspect;
-      offsetX = (pdfWidth - finalWidth) / 2;
+      // Desktop: export as PDF
+      const jsPDF = (await import('jspdf')).default;
+      
+      // A3 landscape dimensions in mm
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a3',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calculate dimensions to fit the canvas proportionally into A3
+      const canvasAspect = canvas.width / canvas.height;
+      const pdfAspect = pdfWidth / pdfHeight;
+      
+      let finalWidth = pdfWidth;
+      let finalHeight = pdfHeight;
+      let offsetX = 0;
+      let offsetY = 0;
+      
+      if (canvasAspect > pdfAspect) {
+        // Canvas is wider - fit to width
+        finalWidth = pdfWidth;
+        finalHeight = pdfWidth / canvasAspect;
+        offsetY = (pdfHeight - finalHeight) / 2;
+      } else {
+        // Canvas is taller - fit to height
+        finalHeight = pdfHeight;
+        finalWidth = pdfHeight * canvasAspect;
+        offsetX = (pdfWidth - finalWidth) / 2;
+      }
+      
+      pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+      pdf.save(`${filename}-strategy.pdf`);
     }
-    
-    pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
-    pdf.save(`${strategyName.replace(/\s+/g, '-').toLowerCase()}-strategy.pdf`);
   }, [strategyName]);
 
   const updateBox = useCallback((id: string, updates: Partial<BoxData>) => {
@@ -1149,7 +1166,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
               Add box
             </button>
             <button
-              onClick={handleExportPdf}
+              onClick={handleExport}
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#1db6ac] text-white rounded-lg hover:bg-[#19a89f] transition-colors font-medium"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1261,13 +1278,13 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
               Add
             </button>
             <button
-              onClick={handleExportPdf}
+              onClick={handleExport}
               className="inline-flex items-center gap-1 px-2 py-1.5 bg-[#1db6ac] text-white rounded-lg active:bg-[#19a89f] transition-colors font-medium text-xs flex-shrink-0"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              PDF
+              Export
             </button>
             {/* Font size controls - compact */}
             <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden flex-shrink-0">
