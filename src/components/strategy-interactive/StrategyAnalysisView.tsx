@@ -723,15 +723,25 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Temporarily remove zoom for clean html2canvas capture
-    // html2canvas doesn't handle zoom or transform properly
+    // Store original styles
     const originalZoom = contentWrapper.style.zoom;
+    const originalContainerWidth = container.style.width;
+    const originalContainerMaxWidth = container.style.maxWidth;
+    const originalContainerPosition = container.style.position;
+    const originalContainerLeft = container.style.left;
+    
+    // Remove zoom and expand container to design width for clean capture
+    // This prevents clipping and gives html2canvas clean unzoomed content
     contentWrapper.style.zoom = '1';
+    container.style.width = `${DESIGN_WIDTH}px`;
+    container.style.maxWidth = 'none';
+    container.style.position = 'absolute';
+    container.style.left = '-9999px'; // Move off-screen during capture
     
     // Small delay to ensure styles are applied
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 150));
     
-    // Capture without zoom - html2canvas will get clean unzoomed content
+    // Capture the expanded container with clean layout
     const canvas = await html2canvas(container, {
       scale: 3, // High resolution for quality
       useCORS: true,
@@ -739,8 +749,12 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       backgroundColor: null,
     });
     
-    // Restore zoom
+    // Restore all original styles
     contentWrapper.style.zoom = originalZoom;
+    container.style.width = originalContainerWidth;
+    container.style.maxWidth = originalContainerMaxWidth;
+    container.style.position = originalContainerPosition;
+    container.style.left = originalContainerLeft;
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
