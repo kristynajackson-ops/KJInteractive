@@ -705,7 +705,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   }, []);
 
   const handleExport = useCallback(async () => {
-    if (!a3ContainerRef.current) return;
+    if (!a3ContainerRef.current || !contentWrapperRef.current) return;
     
     // Check if mobile/tablet (using screen width - lg breakpoint is 1024px)
     const isMobileOrTablet = window.innerWidth < 1024;
@@ -717,6 +717,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
+    const contentWrapper = contentWrapperRef.current;
     
     // Add class to hide UI elements during capture
     container.classList.add('pdf-export');
@@ -725,20 +726,60 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.visibility = 'hidden');
     
-    // Wait for UI updates
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Find footer by data attribute
+    const footer = container.querySelector('[data-footer="true"]') as HTMLElement;
     
-    // Capture the container as-is - no layout modifications
-    // Use higher scale to compensate for any zoom
+    // Store original styles
+    const originalZoom = contentWrapper.style.zoom;
+    const originalContainerWidth = container.style.width;
+    const originalContainerMaxWidth = container.style.maxWidth;
+    const originalFooterMarginBottom = footer?.style.marginBottom || '';
+    const originalFooterMarginLeft = footer?.style.marginLeft || '';
+    const originalFooterMarginRight = footer?.style.marginRight || '';
+    
+    // For mobile: remove zoom and expand to full size for clean capture
+    if (isMobileOrTablet) {
+      contentWrapper.style.zoom = '1';
+      container.style.width = `${DESIGN_WIDTH}px`;
+      container.style.maxWidth = 'none';
+    }
+    
+    // Fix footer negative margins for capture
+    if (footer) {
+      footer.style.marginBottom = '0';
+      footer.style.marginLeft = '0';
+      footer.style.marginRight = '0';
+    }
+    
+    // Wait for reflow - use requestAnimationFrame + setTimeout for reliability
+    await new Promise(resolve => {
+      requestAnimationFrame(() => {
+        setTimeout(resolve, 150);
+      });
+    });
+    
+    // Capture
     const canvas = await html2canvas(container, {
-      scale: 4, // Higher resolution
+      scale: 3,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
     });
     
-    // Restore buttons
+    // Restore all original styles immediately
+    if (isMobileOrTablet) {
+      contentWrapper.style.zoom = originalZoom;
+      container.style.width = originalContainerWidth;
+      container.style.maxWidth = originalContainerMaxWidth;
+    }
+    if (footer) {
+      footer.style.marginBottom = originalFooterMarginBottom;
+      footer.style.marginLeft = originalFooterMarginLeft;
+      footer.style.marginRight = originalFooterMarginRight;
+    }
+    
+    // Restore buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.visibility = '');
     container.classList.remove('pdf-export');
     
@@ -1460,7 +1501,10 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
           </div>
 
           {/* Footer */}
-          <div className={`${isDarkMode ? 'bg-[#1db6ac]' : 'bg-gradient-to-r from-[#5f5e5c] to-[#6a6665]'} px-4 py-2 flex items-center justify-between text-xs text-white flex-shrink-0 mt-4 -mx-6 -mb-6`}>
+          <div 
+            data-footer="true"
+            className={`${isDarkMode ? 'bg-[#1db6ac]' : 'bg-gradient-to-r from-[#5f5e5c] to-[#6a6665]'} px-4 py-2 flex items-center justify-between text-xs text-white flex-shrink-0 mt-4 -mx-6 -mb-6`}
+          >
             <span>Generated with Strategy Interactive &middot; kjinteractive.com</span>
             <span className="flex items-center gap-1">
               <span>&copy;</span>
