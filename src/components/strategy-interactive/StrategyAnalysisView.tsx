@@ -729,6 +729,8 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     clone.style.top = '0';
     clone.style.overflow = 'visible';
     clone.style.zIndex = '-1';
+    clone.style.aspectRatio = 'auto'; // Remove aspect ratio constraint
+    clone.style.height = 'auto'; // Let content determine height
     clone.classList.add('pdf-export');
     
     // Remove zoom from the content wrapper in the clone
@@ -741,11 +743,22 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const cloneButtons = clone.querySelectorAll('button');
     cloneButtons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Fix footer margin in clone
-    const cloneFooter = clone.querySelector('.flex-col > div:last-child') as HTMLElement;
-    if (cloneFooter) {
-      cloneFooter.style.marginBottom = '0';
-    }
+    // Fix footer - remove negative margins so it's fully captured
+    const allDivs = clone.querySelectorAll('div');
+    allDivs.forEach(div => {
+      const el = div as HTMLElement;
+      // Check for negative margins and remove them
+      const style = window.getComputedStyle(el);
+      if (parseFloat(style.marginBottom) < 0) {
+        el.style.marginBottom = '0';
+      }
+      if (parseFloat(style.marginLeft) < 0) {
+        el.style.marginLeft = '0';
+      }
+      if (parseFloat(style.marginRight) < 0) {
+        el.style.marginRight = '0';
+      }
+    });
     
     // Append clone to body for capture
     document.body.appendChild(clone);
