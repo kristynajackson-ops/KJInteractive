@@ -737,12 +737,10 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const originalFooterMarginLeft = footer?.style.marginLeft || '';
     const originalFooterMarginRight = footer?.style.marginRight || '';
     
-    // For mobile: remove zoom and expand to full size for clean capture
-    if (isMobileOrTablet) {
-      contentWrapper.style.zoom = '1';
-      container.style.width = `${DESIGN_WIDTH}px`;
-      container.style.maxWidth = 'none';
-    }
+    // Remove zoom and expand to full size for clean capture (both mobile and desktop)
+    contentWrapper.style.zoom = '1';
+    container.style.width = `${DESIGN_WIDTH}px`;
+    container.style.maxWidth = 'none';
     
     // Fix footer negative margins for capture
     if (footer) {
@@ -768,11 +766,9 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     });
     
     // Restore all original styles immediately
-    if (isMobileOrTablet) {
-      contentWrapper.style.zoom = originalZoom;
-      container.style.width = originalContainerWidth;
-      container.style.maxWidth = originalContainerMaxWidth;
-    }
+    contentWrapper.style.zoom = originalZoom;
+    container.style.width = originalContainerWidth;
+    container.style.maxWidth = originalContainerMaxWidth;
     if (footer) {
       footer.style.marginBottom = originalFooterMarginBottom;
       footer.style.marginLeft = originalFooterMarginLeft;
