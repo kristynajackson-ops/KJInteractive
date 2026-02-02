@@ -679,7 +679,6 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Reference to A3 container for PDF export
   const a3ContainerRef = useRef<HTMLDivElement>(null);
-  const a3OuterWrapperRef = useRef<HTMLDivElement>(null);
   const contentWrapperRef = useRef<HTMLDivElement>(null);
   
   // Track container width for scaling content on mobile
@@ -706,7 +705,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   }, []);
 
   const handleExportPdf = useCallback(async () => {
-    if (!a3OuterWrapperRef.current) return;
+    if (!a3ContainerRef.current) return;
     
     // Clear selection to hide resize handles
     setSelectedBoxId(null);
@@ -714,23 +713,23 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     // Dynamically import html2canvas
     const html2canvas = (await import('html2canvas')).default;
     
-    const outerWrapper = a3OuterWrapperRef.current;
+    const container = a3ContainerRef.current;
     
     // Add class to hide UI elements (drag handles, resize handles) during capture
-    outerWrapper.classList.add('pdf-export');
+    container.classList.add('pdf-export');
     
     // Hide buttons temporarily for capture
-    const buttons = outerWrapper.querySelectorAll('button');
+    const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
     // Small delay to ensure UI elements are hidden
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Get the visual dimensions of the outer wrapper (which clips the scaled content)
-    const rect = outerWrapper.getBoundingClientRect();
+    // Get the visual dimensions of the container
+    const rect = container.getBoundingClientRect();
     
-    // Capture the outer wrapper which has overflow-hidden - this gives us the visual output
-    const canvas = await html2canvas(outerWrapper, {
+    // Capture the container which has overflow-hidden and A3 aspect ratio
+    const canvas = await html2canvas(container, {
       scale: 3, // High resolution for quality
       useCORS: true,
       allowTaint: true,
@@ -741,7 +740,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
-    outerWrapper.classList.remove('pdf-export');
+    container.classList.remove('pdf-export');
     
     // Convert to PDF using jspdf
     const jsPDF = (await import('jspdf')).default;
@@ -1299,32 +1298,20 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
       {/* A3 Landscape Canvas - scales to fit viewport on mobile */}
       <div 
-        ref={a3OuterWrapperRef}
-        className="mx-auto shadow-2xl rounded-sm w-full overflow-hidden"
+        ref={a3ContainerRef}
+        className={`mx-auto shadow-2xl rounded-sm w-full overflow-hidden ${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300`}
         style={{ 
           maxWidth: '100%',
+          aspectRatio: '1.414 / 1',
         }}
       >
-        <div
-          ref={a3ContainerRef}
-          className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300 origin-top-left`}
-          style={{
-            aspectRatio: '1.414 / 1',
-            width: '100%',
-            minWidth: '0', // Allow scaling down on mobile
-          }}
-        >
-        {/* Content wrapper with proportional scaling on mobile */}
+        {/* Content wrapper - uses zoom for proportional scaling (works with html2canvas) */}
         <div 
           ref={contentWrapperRef}
           className="h-full flex flex-col p-[2%]"
           style={{
-            // Scale content proportionally when container is smaller than design width
-            // This ensures text and spacing remain proportional to A3 dimensions
-            transform: canvasScale < 1 ? `scale(${canvasScale})` : 'none',
-            transformOrigin: 'top left',
-            width: canvasScale < 1 ? `${100 / canvasScale}%` : '100%',
-            height: canvasScale < 1 ? `${100 / canvasScale}%` : '100%',
+            // Use zoom instead of transform for scaling - html2canvas handles zoom correctly
+            zoom: canvasScale < 1 ? canvasScale : 1,
           }}
         >
           {/* Header */}
@@ -1471,7 +1458,6 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
             </span>
           </div>
         </div>
-      </div>
       </div>
 
       {/* Print Styles */}
