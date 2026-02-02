@@ -752,13 +752,29 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       footer.style.marginRight = '0';
     }
     
-    // Force text re-render by re-assigning innerText on all contentEditable elements
-    // This forces the browser to recalculate text layout from scratch
+    // Disable contentEditable and force text styles to prevent spacing issues
     const editableElements = container.querySelectorAll('[contenteditable="true"]');
+    const originalStates: { el: HTMLElement; editable: string; styles: { wordSpacing: string; letterSpacing: string; whiteSpace: string; textAlign: string } }[] = [];
+    
     editableElements.forEach(el => {
       const htmlEl = el as HTMLElement;
-      const text = htmlEl.innerText;
-      htmlEl.innerText = text;
+      // Save original state
+      originalStates.push({
+        el: htmlEl,
+        editable: htmlEl.getAttribute('contenteditable') || 'true',
+        styles: {
+          wordSpacing: htmlEl.style.wordSpacing,
+          letterSpacing: htmlEl.style.letterSpacing,
+          whiteSpace: htmlEl.style.whiteSpace,
+          textAlign: htmlEl.style.textAlign,
+        }
+      });
+      // Disable editing and force text styles
+      htmlEl.setAttribute('contenteditable', 'false');
+      htmlEl.style.wordSpacing = '0px';
+      htmlEl.style.letterSpacing = 'normal';
+      htmlEl.style.whiteSpace = 'pre-wrap';
+      htmlEl.style.textAlign = 'left';
     });
     
     // Force synchronous reflow by reading layout property
@@ -789,6 +805,15 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       footer.style.marginLeft = originalFooterMarginLeft;
       footer.style.marginRight = originalFooterMarginRight;
     }
+    
+    // Restore contentEditable and text styles
+    originalStates.forEach(({ el, editable, styles }) => {
+      el.setAttribute('contenteditable', editable);
+      el.style.wordSpacing = styles.wordSpacing;
+      el.style.letterSpacing = styles.letterSpacing;
+      el.style.whiteSpace = styles.whiteSpace;
+      el.style.textAlign = styles.textAlign;
+    });
     
     // Restore buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.visibility = '');
