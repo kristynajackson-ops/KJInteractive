@@ -181,7 +181,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
           title="Teal theme"
         />
       </div>
-      <div className="p-3 pt-2 lg:pt-3">
+      <div className="p-3">
         <div
           ref={titleRef}
           contentEditable
@@ -221,7 +221,7 @@ function EditableBox({ id, title, onTitleChange, content, onChange, onRemove, th
               }
             }
           }}
-          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-tight outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-1 text-left`}
+          className={`${styles.text} ${getFontSizeClass(fontSizeIndex)} leading-tight outline-none min-h-[1em] break-words whitespace-pre-wrap overflow-wrap-anywhere [&_br]:block [&_br]:mb-1`}
           style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         />
         </div>
@@ -459,7 +459,7 @@ function EditableListBox({ title, onTitleChange, items, onChange, onRemove, them
           title="Teal theme"
         />
       </div>
-      <div className="p-3 pt-2 lg:pt-3">
+      <div className="p-3">
         <div
           contentEditable
           suppressContentEditableWarning
@@ -679,109 +679,33 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Reference to A3 container for PDF export
   const a3ContainerRef = useRef<HTMLDivElement>(null);
-  const contentWrapperRef = useRef<HTMLDivElement>(null);
-  
-  // Track container width for scaling content on mobile
-  const [canvasScale, setCanvasScale] = useState(1);
-  const DESIGN_WIDTH = 900; // Reference width for design (px) - content designed at this width
-  
-  // Update scale when container resizes
-  useEffect(() => {
-    const updateScale = () => {
-      if (a3ContainerRef.current) {
-        const containerWidth = a3ContainerRef.current.offsetWidth;
-        // Only scale down on smaller screens (below design width)
-        if (containerWidth < DESIGN_WIDTH) {
-          setCanvasScale(containerWidth / DESIGN_WIDTH);
-        } else {
-          setCanvasScale(1);
-        }
-      }
-    };
-    
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, []);
 
-  const handleExport = useCallback(async () => {
-    if (!a3ContainerRef.current || !contentWrapperRef.current) return;
+  const handleExportPdf = useCallback(async () => {
+    if (!a3ContainerRef.current) return;
     
-    // Show loading indicator
-    setIsExporting(true);
-    
-    // Clear selection to hide resize handles
-    setSelectedBoxId(null);
-    
-    // Dynamically import modern-screenshot and jsPDF
-    const { domToCanvas } = await import('modern-screenshot');
-    const jsPDF = (await import('jspdf')).default;
+    // Dynamically import html2canvas
+    const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
-    const contentWrapper = contentWrapperRef.current;
     
-    // Add class to hide UI elements during capture
-    container.classList.add('pdf-export');
-    
-    // Hide buttons temporarily
+    // Hide buttons temporarily for capture
     const buttons = container.querySelectorAll('button');
-    buttons.forEach(btn => (btn as HTMLElement).style.visibility = 'hidden');
+    buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Find footer by data attribute
-    const footer = container.querySelector('[data-footer="true"]') as HTMLElement;
-    
-    // Store original styles
-    const originalZoom = contentWrapper.style.zoom;
-    const originalContainerWidth = container.style.width;
-    const originalContainerMaxWidth = container.style.maxWidth;
-    const originalFooterMarginBottom = footer?.style.marginBottom || '';
-    const originalFooterMarginLeft = footer?.style.marginLeft || '';
-    const originalFooterMarginRight = footer?.style.marginRight || '';
-    
-    // Remove zoom and expand to full size for clean capture (both mobile and desktop)
-    contentWrapper.style.zoom = '1';
-    container.style.width = `${DESIGN_WIDTH}px`;
-    container.style.maxWidth = 'none';
-    
-    // Fix footer negative margins for capture
-    if (footer) {
-      footer.style.marginBottom = '0';
-      footer.style.marginLeft = '0';
-      footer.style.marginRight = '0';
-    }
-    
-    // Force synchronous reflow by reading layout property
-    void container.offsetHeight;
-    
-    // Wait for layout to settle
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Capture using modern-screenshot
-    const canvas = await domToCanvas(container, {
-      scale: 3,
-      backgroundColor: null,
+    // Capture the A3 container
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
     });
     
-    // Restore all original styles immediately
-    contentWrapper.style.zoom = originalZoom;
-    container.style.width = originalContainerWidth;
-    container.style.maxWidth = originalContainerMaxWidth;
-    if (footer) {
-      footer.style.marginBottom = originalFooterMarginBottom;
-      footer.style.marginLeft = originalFooterMarginLeft;
-      footer.style.marginRight = originalFooterMarginRight;
-    }
+    // Show buttons again
+    buttons.forEach(btn => (btn as HTMLElement).style.display = '');
     
-    // Restore buttons and remove export class
-    buttons.forEach(btn => (btn as HTMLElement).style.visibility = '');
-    container.classList.remove('pdf-export');
+    // Convert to PDF using jspdf
+    const jsPDF = (await import('jspdf')).default;
     
-    // Hide loading indicator
-    setIsExporting(false);
-    
-    const filename = strategyName.replace(/\s+/g, '-').toLowerCase();
-    
-    // Export as PDF for all devices (unified experience)
     // A3 landscape dimensions in mm
     const pdf = new jsPDF({
       orientation: 'landscape',
@@ -793,29 +717,8 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
     
-    // Calculate dimensions to fit the canvas proportionally into A3
-    const canvasAspect = canvas.width / canvas.height;
-    const pdfAspect = pdfWidth / pdfHeight;
-    
-    let finalWidth = pdfWidth;
-    let finalHeight = pdfHeight;
-    let offsetX = 0;
-    let offsetY = 0;
-    
-    if (canvasAspect > pdfAspect) {
-      // Canvas is wider - fit to width
-      finalWidth = pdfWidth;
-      finalHeight = pdfWidth / canvasAspect;
-      offsetY = (pdfHeight - finalHeight) / 2;
-    } else {
-      // Canvas is taller - fit to height
-      finalHeight = pdfHeight;
-      finalWidth = pdfHeight * canvasAspect;
-      offsetX = (pdfWidth - finalWidth) / 2;
-    }
-    
-    pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
-    pdf.save(`${filename}-strategy.pdf`);
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${strategyName.replace(/\s+/g, '-').toLowerCase()}-strategy.pdf`);
   }, [strategyName]);
 
   const updateBox = useCallback((id: string, updates: Partial<BoxData>) => {
@@ -858,30 +761,6 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
   const [resizeCorner, setResizeCorner] = useState<'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l' | null>(null);
   const [resizeStart, setResizeStart] = useState<{ x: number; y: number; width: number; height: number; boxX: number; boxY: number } | null>(null);
 
-  // Selected box for mobile (shows resize handles only on selected box)
-  const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
-  
-  // Export loading state
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Refs to track current state for touch/mouse handlers (avoids stale closure issues)
-  const draggedIdRef = useRef<string | null>(null);
-  const dragStartRef = useRef<{ x: number; y: number; boxX: number; boxY: number } | null>(null);
-  const resizingIdRef = useRef<string | null>(null);
-  const resizeCornerRef = useRef<'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l' | null>(null);
-  const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number; boxX: number; boxY: number } | null>(null);
-  const containerRefRef = useRef<HTMLDivElement | null>(null);
-  const boxesRef = useRef(boxes);
-
-  // Keep refs in sync with state
-  useEffect(() => { draggedIdRef.current = draggedId; }, [draggedId]);
-  useEffect(() => { dragStartRef.current = dragStart; }, [dragStart]);
-  useEffect(() => { resizingIdRef.current = resizingId; }, [resizingId]);
-  useEffect(() => { resizeCornerRef.current = resizeCorner; }, [resizeCorner]);
-  useEffect(() => { resizeStartRef.current = resizeStart; }, [resizeStart]);
-  useEffect(() => { containerRefRef.current = containerRef; }, [containerRef]);
-  useEffect(() => { boxesRef.current = boxes; }, [boxes]);
-
   const handleMouseDown = useCallback((e: React.MouseEvent, id: string, boxX: number, boxY: number) => {
     // Don't start drag if clicking on editable elements
     const target = e.target as HTMLElement;
@@ -896,25 +775,6 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     setDragStart({ x: e.clientX, y: e.clientY, boxX, boxY });
   }, []);
 
-  // Touch handlers for mobile drag - touch, hold, drag to move boxes
-  const handleTouchStart = useCallback((e: React.TouchEvent, id: string, boxX: number, boxY: number) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.contentEditable === 'true' || target.closest('input') || target.closest('[contenteditable="true"]')) {
-      return;
-    }
-    const rect = target.closest('.drag-handle');
-    if (!rect) return;
-    
-    // Prevent scrolling while dragging
-    e.preventDefault();
-    
-    const touch = e.touches[0];
-    setDraggedId(id);
-    setDragStart({ x: touch.clientX, y: touch.clientY, boxX, boxY });
-    // Also select the box for visual feedback
-    setSelectedBoxId(id);
-  }, []);
-
   const handleResizeStart = useCallback((e: React.MouseEvent, id: string, width: number, height: number, boxX: number, boxY: number, corner: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l') => {
     e.preventDefault();
     e.stopPropagation();
@@ -923,41 +783,25 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     setResizeStart({ x: e.clientX, y: e.clientY, width, height, boxX, boxY });
   }, []);
 
-  // Touch handler for mobile resize
-  const handleResizeTouchStart = useCallback((e: React.TouchEvent, id: string, width: number, height: number, boxX: number, boxY: number, corner: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'r' | 'b' | 'l') => {
-    e.preventDefault();
-    e.stopPropagation();
-    const touch = e.touches[0];
-    setResizingId(id);
-    setResizeCorner(corner);
-    setResizeStart({ x: touch.clientX, y: touch.clientY, width, height, boxX, boxY });
-  }, []);
-
-  // Use document-level events for smoother dragging (prevents glitches when mouse/touch moves fast)
-  // This effect runs once and uses refs to access current state values
+  // Use document-level events for smoother dragging (prevents glitches when mouse moves fast)
   useEffect(() => {
-    const handleMove = (clientX: number, clientY: number) => {
-      const container = containerRefRef.current;
-      if (!container) return;
-      
-      const containerRect = container.getBoundingClientRect();
+    if (!draggedId && !resizingId) return;
+    
+    const handleDocumentMouseMove = (e: MouseEvent) => {
+      if (!containerRef) return;
+      const containerRect = containerRef.getBoundingClientRect();
       const SNAP_THRESHOLD = 0.5;
-      const currentBoxes = boxesRef.current;
 
-      // Handle drag
-      if (draggedIdRef.current && dragStartRef.current) {
-        const dragStart = dragStartRef.current;
-        const draggedId = draggedIdRef.current;
-        
-        const deltaX = ((clientX - dragStart.x) / containerRect.width) * 100;
-        const deltaY = ((clientY - dragStart.y) / containerRect.height) * 100;
-        const currentBox = currentBoxes.find(b => b.id === draggedId);
+      if (draggedId && dragStart) {
+        const deltaX = ((e.clientX - dragStart.x) / containerRect.width) * 100;
+        const deltaY = ((e.clientY - dragStart.y) / containerRect.height) * 100;
+        const currentBox = boxes.find(b => b.id === draggedId);
         const boxWidth = currentBox?.width || 30;
         const boxHeight = currentBox?.height || 20;
         let newX = Math.max(0, Math.min(100 - boxWidth, dragStart.boxX + deltaX));
         let newY = Math.max(0, Math.min(100 - boxHeight, dragStart.boxY + deltaY));
         
-        const otherBoxes = currentBoxes.filter(b => b.id !== draggedId && b.visible);
+        const otherBoxes = boxes.filter(b => b.id !== draggedId && b.visible);
         for (const other of otherBoxes) {
           if (Math.abs(newX - other.x) < SNAP_THRESHOLD) newX = other.x;
           if (Math.abs((newX + boxWidth) - (other.x + other.width)) < SNAP_THRESHOLD) newX = other.x + other.width - boxWidth;
@@ -972,17 +816,11 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
         setBoxes(prev => prev.map(box => 
           box.id === draggedId ? { ...box, x: newX, y: newY } : box
         ));
-        return true; // Indicate we handled a drag
       }
 
-      // Handle resize
-      if (resizingIdRef.current && resizeStartRef.current && resizeCornerRef.current) {
-        const resizeStart = resizeStartRef.current;
-        const resizingId = resizingIdRef.current;
-        const resizeCorner = resizeCornerRef.current;
-        
-        const deltaX = ((clientX - resizeStart.x) / containerRect.width) * 100;
-        const deltaY = ((clientY - resizeStart.y) / containerRect.height) * 100;
+      if (resizingId && resizeStart && resizeCorner) {
+        const deltaX = ((e.clientX - resizeStart.x) / containerRect.width) * 100;
+        const deltaY = ((e.clientY - resizeStart.y) / containerRect.height) * 100;
         
         let newWidth = resizeStart.width;
         let newHeight = resizeStart.height;
@@ -1026,13 +864,10 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
         setBoxes(prev => prev.map(box => 
           box.id === resizingId ? { ...box, x: newX, y: newY, width: newWidth, height: newHeight } : box
         ));
-        return true; // Indicate we handled a resize
       }
-      
-      return false;
     };
 
-    const handleEnd = () => {
+    const handleDocumentMouseUp = () => {
       setDraggedId(null);
       setDragStart(null);
       setResizingId(null);
@@ -1040,330 +875,160 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       setResizeStart(null);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (draggedIdRef.current || resizingIdRef.current) {
-        handleMove(e.clientX, e.clientY);
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (draggedIdRef.current || resizingIdRef.current) {
-        const touch = e.touches[0];
-        if (touch) {
-          e.preventDefault(); // Prevent scrolling while dragging/resizing
-          handleMove(touch.clientX, touch.clientY);
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (draggedIdRef.current || resizingIdRef.current) {
-        handleEnd();
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (draggedIdRef.current || resizingIdRef.current) {
-        handleEnd();
-      }
-    };
-
-    // Always attach listeners
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
-    document.addEventListener('touchcancel', handleTouchEnd);
+    document.addEventListener('mousemove', handleDocumentMouseMove);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
     
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('touchcancel', handleTouchEnd);
+      document.removeEventListener('mousemove', handleDocumentMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
     };
-  }, []); // Empty dependency array - runs once, uses refs for current values
+  }, [draggedId, dragStart, resizingId, resizeStart, resizeCorner, containerRef, boxes]);
 
   const visibleBoxes = boxes.filter(box => box.visible);
   const hiddenBoxes = boxes.filter(box => !box.visible);
 
   return (
-    <div className="strategy-canvas w-full relative">
-      {/* Export Loading Overlay */}
-      {isExporting && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[100]">
-          <div className="bg-white rounded-xl p-6 flex flex-col items-center gap-3 shadow-xl">
-            <div className="w-10 h-10 border-4 border-[#1db6ac] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm font-medium text-gray-700">Preparing export...</span>
-          </div>
-        </div>
-      )}
-      
+    <div className="strategy-canvas w-full">
       {/* Print Controls */}
-      <div className="print:hidden mb-4">
-        {/* Mobile: Analysis info on top */}
-        <div className="flex items-center gap-3 mb-3 md:mb-0 md:hidden">
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#eff0f0] text-[#1db6ac] text-xs font-medium">
-            {analysis.analysis_method === "llm" ? "AI Analysis" : "Pattern Analysis"}
+      <div className="print:hidden mb-4 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eff0f0] text-[#1db6ac] text-sm font-medium">
+            {analysis.analysis_method === "llm" ? "AI-Powered Analysis" : "Pattern-Based Analysis"}
           </span>
-          <span className="text-xs text-gray-500">
-            {(analysis.raw_text_length / 1000).toFixed(1)}k chars
+          <span className="text-sm text-gray-500">
+            {(analysis.raw_text_length / 1000).toFixed(1)}k characters analysed
           </span>
         </div>
-        
-        {/* Desktop layout */}
-        <div className="hidden md:flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eff0f0] text-[#1db6ac] text-sm font-medium">
-              {analysis.analysis_method === "llm" ? "AI-Powered Analysis" : "Pattern-Based Analysis"}
+        <div className="flex items-center gap-2">
+          {hiddenBoxes.length > 0 && (
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  restoreBox(e.target.value);
+                }
+                e.target.value = "";
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+              defaultValue=""
+            >
+              <option value="" disabled>Restore removed box...</option>
+              {hiddenBoxes.map(item => (
+                <option key={item.id} value={item.id}>{item.title}</option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={resetToDefault}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+            title="Reset to default"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reset
+          </button>
+          <button
+            onClick={undo}
+            disabled={historyIndex <= 0}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Undo"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+            Undo
+          </button>
+          <button
+            onClick={redo}
+            disabled={historyIndex >= history.length - 1}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Redo"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+            </svg>
+            Redo
+          </button>
+          <button
+            onClick={addBox}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] transition-colors font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add box
+          </button>
+          <button
+            onClick={handleExportPdf}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1db6ac] text-white rounded-lg hover:bg-[#19a89f] transition-colors font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export to PDF
+          </button>
+          {/* Font size controls */}
+          <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={decreaseFontSize}
+              disabled={fontSizeIndex === 0}
+              className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-gray-300"
+              title="Decrease font size"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </button>
+            <span className="px-3 py-2 bg-white text-gray-700 text-sm font-medium min-w-[60px] text-center">
+              {FONT_SIZES[fontSizeIndex]}px
             </span>
-            <span className="text-sm text-gray-500">
-              {(analysis.raw_text_length / 1000).toFixed(1)}k characters analysed
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {hiddenBoxes.length > 0 && (
-              <select
-                onChange={(e) => {
-                  if (e.target.value) {
-                    restoreBox(e.target.value);
-                  }
-                  e.target.value = "";
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-                defaultValue=""
-              >
-                <option value="" disabled>Restore removed box...</option>
-                {hiddenBoxes.map(item => (
-                  <option key={item.id} value={item.id}>{item.title}</option>
-                ))}
-              </select>
-            )}
             <button
-              onClick={resetToDefault}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
-              title="Reset to default"
+              onClick={increaseFontSize}
+              disabled={fontSizeIndex === 5}
+              className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-l border-gray-300"
+              title="Increase font size"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reset
-            </button>
-            <button
-              onClick={undo}
-              disabled={historyIndex <= 0}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Undo"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-              Undo
-            </button>
-            <button
-              onClick={redo}
-              disabled={historyIndex >= history.length - 1}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Redo"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-              </svg>
-              Redo
-            </button>
-            <button
-              onClick={addBox}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#162d4a] transition-colors font-medium"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add box
             </button>
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#1db6ac] text-white rounded-lg hover:bg-[#19a89f] transition-colors font-medium"
-            >
+          </div>
+          <button
+            onClick={handleDarkModeToggle}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${isDarkMode ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+          >
+            {isDarkMode ? (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
-              Export to PDF
-            </button>
-            {/* Font size controls */}
-            <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={decreaseFontSize}
-                disabled={fontSizeIndex === 0}
-                className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-gray-300"
-                title="Decrease font size"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                </svg>
-              </button>
-              <span className="px-3 py-2 bg-white text-gray-700 text-sm font-medium min-w-[60px] text-center">
-                {FONT_SIZES[fontSizeIndex]}px
-              </span>
-              <button
-                onClick={increaseFontSize}
-                disabled={fontSizeIndex === 5}
-                className="px-3 py-2 bg-white text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-l border-gray-300"
-                title="Increase font size"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            </div>
-            <button
-              onClick={handleDarkModeToggle}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${isDarkMode ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
-            >
-              {isDarkMode ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-              {isDarkMode ? 'Light' : 'Dark'}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile toolbar - horizontally scrollable */}
-        <div className="md:hidden overflow-x-auto pb-2 -mx-4 px-4">
-          <div className="flex items-center gap-2 min-w-max">
-            {hiddenBoxes.length > 0 && (
-              <select
-                onChange={(e) => {
-                  if (e.target.value) {
-                    restoreBox(e.target.value);
-                  }
-                  e.target.value = "";
-                }}
-                className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white flex-shrink-0"
-                defaultValue=""
-              >
-                <option value="" disabled>Restore...</option>
-                {hiddenBoxes.map(item => (
-                  <option key={item.id} value={item.id}>{item.title}</option>
-                ))}
-              </select>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
             )}
-            <button
-              onClick={resetToDefault}
-              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 transition-colors font-medium text-xs flex-shrink-0"
-              title="Reset"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reset
-            </button>
-            <button
-              onClick={undo}
-              disabled={historyIndex <= 0}
-              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 transition-colors font-medium text-xs disabled:opacity-50 flex-shrink-0"
-              title="Undo"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-            </button>
-            <button
-              onClick={redo}
-              disabled={historyIndex >= history.length - 1}
-              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-200 text-gray-700 rounded-lg active:bg-gray-300 transition-colors font-medium text-xs disabled:opacity-50 flex-shrink-0"
-              title="Redo"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-              </svg>
-            </button>
-            <button
-              onClick={addBox}
-              className="inline-flex items-center gap-1 px-2 py-1.5 bg-[#1e3a5f] text-white rounded-lg active:bg-[#162d4a] transition-colors font-medium text-xs flex-shrink-0"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add
-            </button>
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-1 px-2 py-1.5 bg-[#1db6ac] text-white rounded-lg active:bg-[#19a89f] transition-colors font-medium text-xs flex-shrink-0"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export
-            </button>
-            {/* Font size controls - compact */}
-            <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden flex-shrink-0">
-              <button
-                onClick={decreaseFontSize}
-                disabled={fontSizeIndex === 0}
-                className="px-2 py-1.5 bg-white text-gray-700 active:bg-gray-100 transition-colors disabled:opacity-50 border-r border-gray-300"
-                title="Decrease"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                </svg>
-              </button>
-              <span className="px-2 py-1.5 bg-white text-gray-700 text-xs font-medium">
-                {FONT_SIZES[fontSizeIndex]}
-              </span>
-              <button
-                onClick={increaseFontSize}
-                disabled={fontSizeIndex === 5}
-                className="px-2 py-1.5 bg-white text-gray-700 active:bg-gray-100 transition-colors disabled:opacity-50 border-l border-gray-300"
-                title="Increase"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            </div>
-            <button
-              onClick={handleDarkModeToggle}
-              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors font-medium text-xs flex-shrink-0 ${isDarkMode ? 'bg-gray-200 text-gray-800 active:bg-gray-300' : 'bg-gray-800 text-white active:bg-gray-700'}`}
-            >
-              {isDarkMode ? (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-              {isDarkMode ? 'Light' : 'Dark'}
-            </button>
-          </div>
+            {isDarkMode ? 'Light' : 'Dark'}
+          </button>
         </div>
       </div>
 
-      {/* A3 Landscape Canvas - scales to fit viewport on mobile */}
+      {/* A3 Landscape Canvas - wrapped in shadow container */}
       <div 
-        ref={a3ContainerRef}
-        className={`mx-auto shadow-2xl rounded-sm w-full overflow-hidden ${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300`}
+        className="mx-auto shadow-2xl rounded-sm w-full overflow-auto"
         style={{ 
           maxWidth: '100%',
-          aspectRatio: '1.414 / 1',
+          maxHeight: 'calc(100vh - 180px)',
         }}
       >
-        {/* Content wrapper - uses zoom for proportional scaling (works with html2canvas) */}
-        <div 
-          ref={contentWrapperRef}
-          className="h-full flex flex-col p-[2%]"
+        <div
+          ref={a3ContainerRef}
+          className={`${isDarkMode ? 'bg-[#1e3a5f]' : 'bg-white'} print:shadow-none transition-colors duration-300`}
           style={{
-            // Use zoom instead of transform for scaling - html2canvas handles zoom correctly
-            zoom: canvasScale < 1 ? canvasScale : 1,
+            aspectRatio: '1.414 / 1',
+            minWidth: '800px', // Minimum width to ensure boxes don't get too cramped
+            width: '100%',
           }}
         >
+        <div className="h-full flex flex-col p-[2%]">
           {/* Header */}
           <div className="flex items-center justify-between flex-shrink-0 mb-4">
             <div>
@@ -1371,7 +1036,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={(e) => setStrategyName(e.currentTarget.innerText || initialStrategyName)}
-                className={`text-xl font-black capitalize leading-tight outline-none border-b-2 border-transparent hover:border-[#1db6ac] focus:border-[#1db6ac] transition-colors whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-[#1e3a5f]'} ${montserrat.className}`}
+                className={`text-xl font-black capitalize leading-tight outline-none border-b-2 border-transparent hover:border-[#1db6ac] focus:border-[#1db6ac] transition-colors ${isDarkMode ? 'text-white' : 'text-[#1e3a5f]'} ${montserrat.className}`}
               >
                 {strategyName}
               </h1>
@@ -1390,13 +1055,12 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
               overflow: 'visible',
               minHeight: 0, // Allow flexbox to calculate proper height
             }}
-            onClick={() => setSelectedBoxId(null)} // Deselect when tapping empty area
           >
             {visibleBoxes.map(box => (
               <div
                 key={box.id}
                 className={`absolute transition-shadow duration-150 group/wrapper flex flex-col ${
-                  draggedId === box.id || resizingId === box.id ? 'shadow-lg z-50' : selectedBoxId === box.id ? 'z-40' : 'z-10'
+                  draggedId === box.id || resizingId === box.id ? 'shadow-lg z-50' : 'z-10'
                 }`}
                 style={{
                   left: `${box.x}%`,
@@ -1404,28 +1068,11 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                   width: `${box.width}%`,
                   minHeight: `${box.height}%`,
                 }}
-                onClick={(e) => {
-                  // Select box on tap/click (mobile)
-                  e.stopPropagation();
-                  setSelectedBoxId(box.id);
-                }}
               >
-                {/* Box content wrapper */}
-                <div className="flex-1 flex flex-col relative">
-                  {/* Drag handle - floats above box content, mobile/tablet only */}
-                  <div
-                    className={`drag-handle lg:hidden absolute -top-1 -left-1 z-20 cursor-grab active:cursor-grabbing p-1 rounded ${
-                      box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' 
-                        ? 'bg-white/30 active:bg-white/40' 
-                        : 'bg-gray-200/80 active:bg-gray-300/80'
-                    } transition-colors shadow-sm`}
-                    onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
-                    onTouchStart={(e) => handleTouchStart(e, box.id, box.x, box.y)}
-                  >
-                    <svg className={`w-3.5 h-3.5 ${box.theme === 'teal' || box.theme === 'navy' || box.theme === 'midblue' ? 'text-white/80' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
-                    </svg>
-                  </div>
+                <div
+                  className="drag-handle cursor-grab active:cursor-grabbing flex-1 flex flex-col"
+                  onMouseDown={(e) => handleMouseDown(e, box.id, box.x, box.y)}
+                >
                   {box.type === "text" ? (
                     <EditableBox
                       id={box.id}
@@ -1452,57 +1099,46 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
                     />
                   )}
                 </div>
-                {/* Resize handles - visible when selected on mobile/tablet, or on hover on desktop (lg+) - more subtle styling */}
+                {/* Resize handles - all corners */}
                 <div
-                  className={`resize-handle absolute top-0 left-0 w-5 h-5 lg:w-2 lg:h-2 cursor-nw-resize transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute top-0 left-0 w-3 h-3 cursor-nw-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-br ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tl')}
                 />
                 <div
-                  className={`resize-handle absolute top-0 right-0 w-5 h-5 lg:w-2 lg:h-2 cursor-ne-resize transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute top-0 right-0 w-3 h-3 cursor-ne-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-bl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'tr')}
                 />
                 <div
-                  className={`resize-handle absolute bottom-0 left-0 w-5 h-5 lg:w-2 lg:h-2 cursor-sw-resize transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-tr ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'bl')}
                 />
                 <div
-                  className={`resize-handle absolute bottom-0 right-0 w-5 h-5 lg:w-2 lg:h-2 cursor-se-resize transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute bottom-0 right-0 w-3 h-3 cursor-se-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity rounded-tl ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'br')}
                 />
-                {/* Resize handles - edges (hidden by default, show on selection for mobile/tablet, hover for desktop) */}
+                {/* Resize handles - all edges */}
                 <div
-                  className={`resize-handle absolute top-0 left-5 right-5 lg:left-2 lg:right-2 h-2 lg:h-0.5 cursor-n-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute top-0 left-3 right-3 h-1 cursor-n-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 't')}
                 />
                 <div
-                  className={`resize-handle absolute right-0 top-5 bottom-5 lg:top-2 lg:bottom-2 w-2 lg:w-0.5 cursor-e-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute right-0 top-3 bottom-3 w-1 cursor-e-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'r')}
                 />
                 <div
-                  className={`resize-handle absolute bottom-0 left-5 right-5 lg:left-2 lg:right-2 h-2 lg:h-0.5 cursor-s-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute bottom-0 left-3 right-3 h-1 cursor-s-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'b')}
                 />
                 <div
-                  className={`resize-handle absolute left-0 top-5 bottom-5 lg:top-2 lg:bottom-2 w-2 lg:w-0.5 cursor-w-resize transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]/70' : 'bg-[#1db6ac]/70'} ${selectedBoxId === box.id ? 'opacity-80' : 'opacity-0'} lg:opacity-0 lg:group-hover/wrapper:opacity-60`}
+                  className={`absolute left-0 top-3 bottom-3 w-1 cursor-w-resize opacity-0 group-hover/wrapper:opacity-100 transition-opacity ${box.theme === 'teal' ? 'bg-[#1e3a5f]' : 'bg-[#1db6ac]'}`}
                   onMouseDown={(e) => handleResizeStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
-                  onTouchStart={(e) => handleResizeTouchStart(e, box.id, box.width, box.height, box.x, box.y, 'l')}
                 />
               </div>
             ))}
           </div>
 
           {/* Footer */}
-          <div 
-            data-footer="true"
-            className={`${isDarkMode ? 'bg-[#1db6ac]' : 'bg-gradient-to-r from-[#5f5e5c] to-[#6a6665]'} px-4 py-2 flex items-center justify-between text-xs text-white flex-shrink-0 mt-4 -mx-6 -mb-6`}
-          >
+          <div className={`${isDarkMode ? 'bg-[#1db6ac]' : 'bg-gradient-to-r from-[#5f5e5c] to-[#6a6665]'} px-4 py-2 flex items-center justify-between text-xs text-white flex-shrink-0 mt-4 -mx-6 -mb-6`}>
             <span>Generated with Strategy Interactive &middot; kjinteractive.com</span>
             <span className="flex items-center gap-1">
               <span>&copy;</span>
@@ -1512,17 +1148,10 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
           </div>
         </div>
       </div>
+      </div>
 
       {/* Print Styles */}
       <style jsx global>{`
-        /* PDF Export - hide UI elements during capture */
-        .pdf-export .drag-handle {
-          display: none !important;
-        }
-        .pdf-export .resize-handle {
-          display: none !important;
-        }
-        
         @media print {
           @page {
             size: A3 landscape;

@@ -32,11 +32,11 @@ export function StrategyUpload({ onFileUpload, isUploading }: StrategyUploadProp
       return;
     }
 
-    const allowedExtensions = [".pdf", ".docx", ".doc", ".png", ".jpg", ".jpeg", ".tiff"];
+    const allowedExtensions = [".pdf", ".docx", ".doc"];
     const ext = "." + file.name.split(".").pop()?.toLowerCase();
 
     if (!allowedExtensions.includes(ext)) {
-      setUploadError("File type not supported. Allowed: PDF, Word, PNG, JPEG, TIFF");
+      setUploadError("File type not supported. Allowed: PDF, Word");
       return;
     }
 
@@ -103,7 +103,7 @@ export function StrategyUpload({ onFileUpload, isUploading }: StrategyUploadProp
             <input
               type="file"
               onChange={handleFileSelect}
-              accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.tiff"
+              accept=".pdf,.docx,.doc"
               className="hidden"
               id="file-upload"
             />
@@ -115,7 +115,7 @@ export function StrategyUpload({ onFileUpload, isUploading }: StrategyUploadProp
             </label>
 
             <p className="text-xs text-gray-400 mt-4">
-              Supported: PDF, Word, PNG, JPEG, TIFF (max 20MB)
+              Supported: PDF, Word (max 20MB)
             </p>
           </div>
         )}
