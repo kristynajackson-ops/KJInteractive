@@ -679,6 +679,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
 
   // Reference to A3 container for PDF export
   const a3ContainerRef = useRef<HTMLDivElement>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
   
   // Track container width for scaling content on mobile
   const [canvasScale, setCanvasScale] = useState(1);
@@ -713,6 +714,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const html2canvas = (await import('html2canvas')).default;
     
     const container = a3ContainerRef.current;
+    const contentWrapper = contentWrapperRef.current;
     
     // Add class to hide UI elements during capture
     container.classList.add('pdf-export');
@@ -720,6 +722,19 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     // Hide buttons temporarily for capture
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
+    
+    // Temporarily reset scaling for accurate capture
+    // Store original styles
+    const originalTransform = contentWrapper?.style.transform || '';
+    const originalWidth = contentWrapper?.style.width || '';
+    const originalHeight = contentWrapper?.style.height || '';
+    
+    // Reset to unscaled state for capture
+    if (contentWrapper) {
+      contentWrapper.style.transform = 'none';
+      contentWrapper.style.width = '100%';
+      contentWrapper.style.height = '100%';
+    }
     
     // Small delay to ensure React has re-rendered without selection
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -742,6 +757,13 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
       width: containerWidth,
       height: containerHeight,
     });
+    
+    // Restore original scaling styles
+    if (contentWrapper) {
+      contentWrapper.style.transform = originalTransform;
+      contentWrapper.style.width = originalWidth;
+      contentWrapper.style.height = originalHeight;
+    }
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
@@ -1319,6 +1341,7 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
         >
         {/* Content wrapper with proportional scaling on mobile */}
         <div 
+          ref={contentWrapperRef}
           className="h-full flex flex-col p-[2%]"
           style={{
             // Scale content proportionally when container is smaller than design width
