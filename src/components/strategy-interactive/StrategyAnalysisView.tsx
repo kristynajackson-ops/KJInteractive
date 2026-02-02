@@ -698,43 +698,27 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const buttons = container.querySelectorAll('button');
     buttons.forEach(btn => (btn as HTMLElement).style.display = 'none');
     
-    // Store original styles
-    const originalWidth = container.style.width;
-    const originalMinWidth = container.style.minWidth;
-    const originalTransform = container.style.transform;
-    const parentElement = container.parentElement;
-    const originalParentOverflow = parentElement?.style.overflow || '';
-    
-    // Set fixed width to ensure proper text rendering for A3 landscape
-    // A3 landscape aspect ratio is 420mm x 297mm (1.414:1)
-    // Use a large fixed width to ensure text doesn't wrap incorrectly
-    container.style.width = '1200px';
-    container.style.minWidth = '1200px';
-    container.style.transform = 'scale(1)';
-    if (parentElement) {
-      parentElement.style.overflow = 'visible';
-    }
-    
-    // Small delay to ensure React has re-rendered without selection and with new width
+    // Small delay to ensure React has re-rendered without selection
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Capture the A3 container
+    // Get the actual rendered dimensions of the container
+    const containerRect = container.getBoundingClientRect();
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+    
+    // Calculate scale factor to get a high-quality capture
+    // Target at least 2400px wide for good A3 print quality
+    const scaleFactor = Math.max(3, 2400 / containerWidth);
+    
+    // Capture the A3 container at its current size but with high scale
     const canvas = await html2canvas(container, {
-      scale: 2,
+      scale: scaleFactor,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
-      width: 1200,
-      windowWidth: 1200,
+      width: containerWidth,
+      height: containerHeight,
     });
-    
-    // Restore original styles
-    container.style.width = originalWidth;
-    container.style.minWidth = originalMinWidth;
-    container.style.transform = originalTransform;
-    if (parentElement) {
-      parentElement.style.overflow = originalParentOverflow;
-    }
     
     // Show buttons and remove export class
     buttons.forEach(btn => (btn as HTMLElement).style.display = '');
@@ -754,7 +738,28 @@ export function StrategyAnalysisView({ analysis, filename }: StrategyAnalysisVie
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
     
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    // Calculate dimensions to fit the canvas proportionally into A3
+    const canvasAspect = canvas.width / canvas.height;
+    const pdfAspect = pdfWidth / pdfHeight;
+    
+    let finalWidth = pdfWidth;
+    let finalHeight = pdfHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    if (canvasAspect > pdfAspect) {
+      // Canvas is wider - fit to width
+      finalWidth = pdfWidth;
+      finalHeight = pdfWidth / canvasAspect;
+      offsetY = (pdfHeight - finalHeight) / 2;
+    } else {
+      // Canvas is taller - fit to height
+      finalHeight = pdfHeight;
+      finalWidth = pdfHeight * canvasAspect;
+      offsetX = (pdfWidth - finalWidth) / 2;
+    }
+    
+    pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
     pdf.save(`${strategyName.replace(/\s+/g, '-').toLowerCase()}-strategy.pdf`);
   }, [strategyName]);
 
