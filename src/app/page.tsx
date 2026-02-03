@@ -139,13 +139,13 @@ export default function Home() {
           <div className="text-center">
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div ref={aboutImageRef} className="overflow-hidden">
+            <div ref={aboutImageRef} className="overflow-hidden md:overflow-visible">
               <img 
                 ref={imageRef}
                 src="/iso-1.png" 
                 alt="Kristyn Jackson" 
                 width={600} height={600}
-                className={`w-full md:max-w-none md:w-[120%] h-auto object-contain md:-ml-[15vw] lg:-ml-[18vw] cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
+                className={`w-full md:max-w-none md:w-[120%] h-auto object-contain cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
                 style={{
                   transition: 'transform 0.3s ease',
                   transform: `scale(${scale}) translateX(${hovered ? '10px' : '0px'})`
