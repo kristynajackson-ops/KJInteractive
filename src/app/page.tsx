@@ -145,7 +145,7 @@ export default function Home() {
                 src="/iso-1.png" 
                 alt="Kristyn Jackson" 
                 width={600} height={600}
-                className={`w-full md:max-w-none md:w-[120%] md:-ml-[5%] h-auto object-contain cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
+                className={`w-full md:max-w-none md:w-[120%] md:-ml-[10%] h-auto object-contain cursor-pointer transition-transform duration-300 hover:scale-110${aboutImageVisible ? ' hero-animate' : ' pre-animate'}`}
                 style={{
                   transition: 'transform 0.3s ease',
                   transform: `scale(${scale}) translateX(${hovered ? '10px' : '0px'})`
