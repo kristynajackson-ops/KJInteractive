@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 export default function AboutPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
-  const [imageVisible, setImageVisible] = useState(false);
+  const [imageVisible, setImageVisible] = useState(true);
   const bannerRef = useRef<HTMLElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +25,7 @@ export default function AboutPage() {
           setBannerVisible(true);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.1 }
     );
     const currentBannerRef = bannerRef.current;
     if (currentBannerRef) {
@@ -45,7 +45,7 @@ export default function AboutPage() {
           setImageVisible(true);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.1 }
     );
     const currentImageRef = imageRef.current;
     if (currentImageRef) {
@@ -163,20 +163,26 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-      {showScrollTop && (
-        <button
-          aria-label="Scroll to top"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-blue-400 to-teal-500 text-white p-3 rounded-full shadow-lg hover:from-blue-500 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-transform duration-200 hover:scale-105"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
-            <path fillRule="evenodd" d="M12 4a.75.75 0 01.53.22l5.25 5.25a.75.75 0 11-1.06 1.06L12.75 6.59V20a.75.75 0 01-1.5 0V6.59L7.28 10.53a.75.75 0 11-1.06-1.06L11.47 4.22A.75.75 0 0112 4z" clipRule="evenodd" />
-          </svg>
-        </button>
-      )}
+      {/* Scroll to top button - always visible for testing */}
+      <button
+        aria-label="Scroll to top"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-blue-400 to-teal-500 text-white p-3 rounded-full shadow-lg hover:from-blue-500 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-transform duration-200 hover:scale-105"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+          <path fillRule="evenodd" d="M12 4a.75.75 0 01.53.22l5.25 5.25a.75.75 0 11-1.06 1.06L12.75 6.59V20a.75.75 0 01-1.5 0V6.59L7.28 10.53a.75.75 0 11-1.06-1.06L11.47 4.22A.75.75 0 0112 4z" clipRule="evenodd" />
+        </svg>
+      </button>
       <style jsx global>{`
         a:hover {
           color: #1db6ac !important;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .banner-animate {
+          animation: fadeIn 0.8s ease-out forwards;
         }
       `}</style>
     </main>

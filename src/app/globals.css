@@ -25,14 +25,44 @@ button, .btn, a.btn, [role="button"] {
   text-decoration: none !important;
 }
 
+/* Default link styles - only apply to content links */
 a {
-  color: #24658f;
-  text-decoration: underline;
   transition: color 0.3s ease;
 }
 
-a:hover {
+/* Content links (paragraphs, lists, etc.) get underline styling */
+p a, li a, article a, .prose a {
+  color: #24658f;
+  text-decoration: underline;
+}
+
+p a:hover, li a:hover, article a:hover, .prose a:hover {
   color: #1d5375;
+}
+
+/* Reset styles for links with no-underline class */
+a.no-underline,
+.no-underline {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Navigation links */
+nav a {
+  color: inherit;
+  text-decoration: none !important;
+}
+
+/* Ensure btn-primary links have white text */
+a.btn-primary,
+.btn-primary {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+/* Footer links */
+footer a {
+  text-decoration: none;
 }
 
 body {

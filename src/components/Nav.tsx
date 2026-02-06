@@ -61,6 +61,12 @@ export default function Nav() {
                 <span className="w-full absolute left-0 bottom-0 h-1 bg-[#1db6ac] scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
               </span>
             </a>
+            <a href="/chat" className="group text-gray-700 transition duration-300 no-underline font-semibold relative h-full flex items-stretch">
+              <span className="group-hover:bg-[#eff0f0] group-hover:text-[#1db6ac] w-full h-full transition-colors duration-200 block relative flex items-center justify-center px-3 lg:px-4 py-2">
+                Claude Chat
+                <span className="w-full absolute left-0 bottom-0 h-1 bg-[#1db6ac] scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
+              </span>
+            </a>
             <a href="/#contact" className="group text-gray-700 transition duration-300 no-underline font-semibold relative h-full flex items-stretch">
               <span className="group-hover:bg-[#eff0f0] group-hover:text-[#1db6ac] w-full h-full transition-colors duration-200 block relative flex items-center justify-center px-3 lg:px-4 py-2">
                 Reach me
@@ -85,6 +91,9 @@ export default function Nav() {
           </a>
           <a href="/strategy-interactive" onClick={() => setIsOpen(false)} className="block px-4 py-3 text-gray-700 font-semibold hover:bg-[#eff0f0] hover:text-[#1db6ac] rounded-md no-underline transition-colors duration-200">
             Strategy Interactive
+          </a>
+          <a href="/chat" onClick={() => setIsOpen(false)} className="block px-4 py-3 text-gray-700 font-semibold hover:bg-[#eff0f0] hover:text-[#1db6ac] rounded-md no-underline transition-colors duration-200">
+            Claude Chat
           </a>
           <a href="/#contact" onClick={() => setIsOpen(false)} className="block px-4 py-3 text-gray-700 font-semibold hover:bg-[#eff0f0] hover:text-[#1db6ac] rounded-md no-underline transition-colors duration-200">
             Reach me
